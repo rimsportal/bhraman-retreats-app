@@ -148,6 +148,8 @@ export default async function TestimonialsPage() {
                       src={t.imageUrl}
                       alt={t.name}
                       className="tv-card-photo"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="tv-card-avatar" aria-hidden="true">

@@ -4,9 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, LogOut, Plus, Trash2, Upload, Youtube } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import dynamic from "next/dynamic";
 import { publishMediaAsset, uploadMediaForReview } from "@/lib/media-upload-client";
-import { RetreatsManager } from "@/components/admin/retreats-manager";
-import { FounderStoryManager } from "@/components/admin/founder-story-manager";
+
+const RetreatsManager = dynamic(
+  () => import("@/components/admin/retreats-manager").then((mod) => mod.RetreatsManager),
+  { ssr: false }
+);
+const FounderStoryManager = dynamic(
+  () => import("@/components/admin/founder-story-manager").then((mod) => mod.FounderStoryManager),
+  { ssr: false }
+);
 
 type Testimonial = { name: string; location: string; imageUrl: string; quote: string };
 type Video = { title: string; url: string };
@@ -432,7 +440,14 @@ export default function AdminPage() {
                 <div style={{ flex: 1, display: "flex", gap: "16px", alignItems: "flex-end", minWidth: "280px" }}>
                   {t.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.imageUrl} alt={t.name} className="admin-portrait-preview" style={{ flexShrink: 0, marginBottom: "2px" }} />
+                    <img
+                      src={t.imageUrl}
+                      alt={t.name}
+                      className="admin-portrait-preview"
+                      loading="lazy"
+                      decoding="async"
+                      style={{ flexShrink: 0, marginBottom: "2px" }}
+                    />
                   )}
                   <label style={{ flex: 1 }}>
                     Portrait photo URL
@@ -546,7 +561,12 @@ export default function AdminPage() {
             ] as const).map(([slot, label]) => (
               <div className="admin-image-slot" key={slot}>
                 <h3>{label}</h3>
-                {media[slot] ? <img src={media[slot]} alt={label} /> : <div className="admin-image-empty">No image yet</div>}
+                {media[slot] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={media[slot]} alt={label} loading="lazy" decoding="async" />
+                ) : (
+                  <div className="admin-image-empty">No image yet</div>
+                )}
                 <label className="admin-upload">
                   <Upload size={15} /> {media[slot] ? "Replace image" : "Upload image"}
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden

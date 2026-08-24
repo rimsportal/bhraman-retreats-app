@@ -2,13 +2,27 @@
 
 import { CircleDot, Compass, MoonStar, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { EditorialHeading, SectionContainer, SectionLabel } from "@/components/design-system";
-import { BreathingExperience } from "@/components/experiences/breathing-experience";
-import { DailyPause } from "@/components/experiences/daily-pause";
-import { ElementReflection } from "@/components/experiences/element-reflection";
-import { IntentionExperience } from "@/components/experiences/intention-experience";
 import { trackAnonymousProductEvent } from "@/lib/anonymous-analytics.mjs";
 import type { ExperienceId } from "@/lib/experience-model.mjs";
+
+const BreathingExperience = dynamic(
+  () => import("@/components/experiences/breathing-experience").then((mod) => mod.BreathingExperience),
+  { ssr: false }
+);
+const DailyPause = dynamic(
+  () => import("@/components/experiences/daily-pause").then((mod) => mod.DailyPause),
+  { ssr: false }
+);
+const ElementReflection = dynamic(
+  () => import("@/components/experiences/element-reflection").then((mod) => mod.ElementReflection),
+  { ssr: false }
+);
+const IntentionExperience = dynamic(
+  () => import("@/components/experiences/intention-experience").then((mod) => mod.IntentionExperience),
+  { ssr: false }
+);
 
 const EXPERIENCES = [
   { id: "breathing", title: "One-Minute Breathing", copy: "Five gentle cycles of inhale, hold and exhale.", meta: "About 1 minute", icon: Wind, element: "air" },

@@ -440,6 +440,7 @@ export function RetreatMemories({
                 src={filteredImages[lightboxIndex].url}
                 alt={filteredImages[lightboxIndex].altText || "Retreat memory"}
                 className="lightbox-main-image"
+                decoding="async"
               />
               <div className="lightbox-info-bar">
                 {filteredImages[lightboxIndex].category && (

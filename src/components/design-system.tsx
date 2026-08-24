@@ -122,7 +122,7 @@ export function ResponsiveMedia({
       src={src}
       alt={alt ?? ""}
       loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : "auto"}
+      fetchPriority={priority ? "high" : undefined}
       decoding="async"
       {...props}
     />

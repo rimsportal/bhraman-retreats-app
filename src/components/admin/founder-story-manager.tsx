@@ -296,6 +296,8 @@ export function FounderStoryManager() {
               <img
                 src={data.imageUrl}
                 alt="Founder portrait preview"
+                loading="lazy"
+                decoding="async"
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/hero-yoga-lamayuru.jpg";
@@ -454,6 +456,8 @@ export function FounderStoryManager() {
                     <img
                       src={chapter.imageSlot}
                       alt={chapter.imageAlt || "Chapter preview"}
+                      loading="lazy"
+                      decoding="async"
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/uploads/images/background/hero-himalayan-dawn.jpg";

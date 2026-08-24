@@ -666,7 +666,7 @@ export function RetreatsManager() {
             <span className="admin-cover-label">Cover image</span>
             {draft.heroImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={draft.heroImageUrl} alt="Retreat cover preview" />
+              <img src={draft.heroImageUrl} alt="Retreat cover preview" loading="lazy" decoding="async" />
             ) : (
               <div className="admin-image-empty">No cover image yet</div>
             )}
@@ -951,6 +951,8 @@ export function RetreatsManager() {
                             <img
                               src={asset.posterUrl || asset.url}
                               alt={asset.altText || "Video thumbnail"}
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src = "/uploads/images/background/hero-himalayan-dawn.jpg";
                               }}
@@ -972,6 +974,8 @@ export function RetreatsManager() {
                           <img
                             src={asset.url}
                             alt={asset.altText || "Retreat moment"}
+                            loading="lazy"
+                            decoding="async"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src = "/uploads/images/background/hero-himalayan-dawn.jpg";
                             }}

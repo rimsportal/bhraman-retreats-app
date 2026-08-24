@@ -1,11 +1,16 @@
 "use client";
 
 import { ArrowRight, Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { EditorialHeading, QuoteBlock, ResponsiveMedia, SectionLabel } from "@/components/design-system";
 import { Fireflies } from "@/components/nature-effects";
-import { FounderStoryOverlay } from "@/components/founder-story-overlay";
 import type { FounderContent, HomeContent, MediaContent, QuoteContent } from "@/lib/content";
+
+const FounderStoryOverlay = dynamic(
+  () => import("@/components/founder-story-overlay").then((mod) => mod.FounderStoryOverlay),
+  { ssr: false }
+);
 
 interface FounderStorySectionProps {
   content: HomeContent;
@@ -70,13 +75,15 @@ export function FounderStorySection({
         </div>
       </section>
 
-      <FounderStoryOverlay
-        isOpen={isStoryOpen}
-        onClose={() => setIsStoryOpen(false)}
-        founder={founder}
-        media={media}
-        mediaSlots={mediaSlots}
-      />
+      {isStoryOpen && (
+        <FounderStoryOverlay
+          isOpen={isStoryOpen}
+          onClose={() => setIsStoryOpen(false)}
+          founder={founder}
+          media={media}
+          mediaSlots={mediaSlots}
+        />
+      )}
     </>
   );
 }
