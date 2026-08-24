@@ -27,6 +27,10 @@ const FaqManager = dynamic(
   () => import("@/components/admin/faq-manager").then((mod) => mod.FaqManager),
   { ssr: false }
 );
+const JournalManager = dynamic(
+  () => import("@/components/admin/journal-manager").then((mod) => mod.JournalManager),
+  { ssr: false }
+);
 
 type Testimonial = { name: string; location: string; imageUrl: string; quote: string };
 type Video = { title: string; url: string };
@@ -42,7 +46,7 @@ type Booking = {
   createdAt: string; user: { name: string | null; email: string; phone: string | null };
 };
 
-const TABS = ["Content", "Enquiries", "Retreats", "Itinerary", "Founder Story", "FAQs", "Testimonials", "Videos", "Images", "Bookings"] as const;
+const TABS = ["Content", "Enquiries", "Retreats", "Itinerary", "Founder Story", "FAQs", "Journal", "Testimonials", "Videos", "Images", "Bookings"] as const;
 const inr = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN")}`;
 
 function youtubeEmbedUrl(url: string): string {
@@ -439,6 +443,7 @@ export default function AdminPage() {
       {tab === "Itinerary" && <ItineraryManager />}
       {tab === "Founder Story" && <FounderStoryManager />}
       {tab === "FAQs" && <FaqManager />}
+      {tab === "Journal" && <JournalManager />}
 
       {/* ── TESTIMONIALS TAB ── */}
       {tab === "Testimonials" && (

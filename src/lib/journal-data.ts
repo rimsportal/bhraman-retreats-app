@@ -9,6 +9,7 @@ export interface JournalPost {
   readingTime: string;
   publishedAt: string;
   category: string;
+  publicationStatus?: "PUBLISHED" | "DRAFT";
 }
 
 export const PREDEFINED_JOURNAL_POSTS: JournalPost[] = [

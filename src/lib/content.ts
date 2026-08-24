@@ -35,6 +35,8 @@ export type HomeContent = {
   testimonialsEmphasis: string;
   blogLabel: string;
   blogTitle: string;
+  blogIntro?: string;
+  showBlogSection?: boolean;
   enquiryLabel: string;
   enquiryTitle: string;
   enquiryEmphasis: string;
@@ -260,6 +262,8 @@ export const defaultHomeContent: HomeContent = {
   testimonialsEmphasis: "carry home.",
   blogLabel: "From the journal",
   blogTitle: "Thoughts for the journey within.",
+  blogIntro: "Reflections on high-altitude medicine, elemental healing, and the transformative power of silence curated by Dr. Pratiksha Shekhawat.",
+  showBlogSection: true,
   enquiryLabel: "Begin a conversation",
   enquiryTitle: "Your next journey",
   enquiryEmphasis: "starts here.",
@@ -279,6 +283,8 @@ function mapContent(value: unknown): HomeContent {
     const candidate = value[key];
     if (key === "philosophyParagraphs") {
       if (Array.isArray(candidate) && candidate.every(isString)) mapped[key] = candidate;
+    } else if (key === "showBlogSection") {
+      if (typeof candidate === "boolean") mapped[key] = candidate;
     } else if (isString(candidate)) {
       (mapped as unknown as Record<string, unknown>)[key] = candidate;
     }
