@@ -954,7 +954,7 @@ export function RetreatsManager() {
                               loading="lazy"
                               decoding="async"
                               onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = "/uploads/images/background/hero-himalayan-dawn.jpg";
+                                (e.currentTarget as HTMLImageElement).src = "/hero-himalayan-dawn.png";
                               }}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
@@ -977,7 +977,7 @@ export function RetreatsManager() {
                             loading="lazy"
                             decoding="async"
                             onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "/uploads/images/background/hero-himalayan-dawn.jpg";
+                              (e.currentTarget as HTMLImageElement).src = "/hero-himalayan-dawn.png";
                             }}
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           />

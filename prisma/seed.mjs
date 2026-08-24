@@ -60,7 +60,7 @@ const retreats = [
     highlight: "The mountains became our classroom, silence became our practice, and five days became a memory carried home.",
     storyTitle: "Five days in the mountains. A thousand small moments.",
     storyBody: "In September 2025, eighteen travellers gathered in the ancient valley of Lamayuru to experience the five elements in their purest Himalayan forms.\n\nFrom early morning Earth grounding amidst cold desert sands to evening Fire ceremonies under star-filled skies, each day allowed the nervous system to settle into silence and deep restoration.",
-    heroImageUrl: "/uploads/images/background/hero-himalayan-dawn.jpg",
+    heroImageUrl: "/hero-himalayan-dawn.png",
     publishedAt: new Date(),
   },
   {
@@ -273,7 +273,7 @@ async function main() {
     const memoryMedia = [
       {
         blobName: "retreats/ladakh-edition-1/cover/cover.jpg",
-        url: "/uploads/images/background/hero-himalayan-dawn.jpg",
+        url: "/hero-himalayan-dawn.png",
         altText: "Sham Valley and Lamayuru landscape in Ladakh",
         title: "Sham Valley, Ladakh",
         caption: "Our sacred sanctuary amidst the moonland valleys of Lamayuru.",
@@ -327,7 +327,7 @@ async function main() {
       {
         blobName: "retreats/ladakh-edition-1/videos/retreat-film.mp4",
         url: "/media/videos/ladakh-edition-1.mp4",
-        posterUrl: "/uploads/images/background/hero-himalayan-dawn.jpg",
+        posterUrl: "/hero-himalayan-dawn.png",
         altText: "Ladakh Edition 1.0 — A Journey Lived (Short Film)",
         title: "Ladakh Edition 1.0 — A Journey Lived",
         caption: "Five elemental days of stillness, mountain wisdom and heartfelt community.",

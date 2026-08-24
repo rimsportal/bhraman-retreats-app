@@ -106,7 +106,7 @@ export function FounderStoryOverlay({
     if (found?.url) return found.url;
     if (mediaSlots[chapter.imageSlot]) return mediaSlots[chapter.imageSlot];
     if (index === 0) return mediaSlots.founder || founder?.imageUrl || "/hero-yoga-lamayuru.jpg";
-    if (index === 1) return mediaSlots["retreat/ladakh/hero"] || "/uploads/images/background/hero-himalayan-dawn.jpg";
+    if (index === 1) return mediaSlots["retreat/ladakh/hero"] || "/hero-himalayan-dawn.png";
     if (index === 2) return mediaSlots["founder/practice"] || "/uploads/images/background/upcoming-retreats.jpg";
     return mediaSlots["memories/ladakh/community"] || "/uploads/images/background/testimonials.jpg";
   };
