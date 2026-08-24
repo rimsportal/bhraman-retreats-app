@@ -28,7 +28,7 @@ async function origin() {
 
 export default async function ItineraryPage() {
   const currentOrigin = await origin();
-  const { retreat, content, elements } = await getHomepageData(currentOrigin);
+  const { retreat, content } = await getHomepageData(currentOrigin);
 
   const itineraryItems: ItineraryItem[] = (retreat?.itinerary || []).map((day) => ({
     day: `DAY 0${day.dayNumber}`,
@@ -140,32 +140,6 @@ export default async function ItineraryPage() {
           />
         </SectionContainer>
       </section>
-
-      {/* Element Breakdown Cards */}
-      {elements.length > 0 && (
-        <section className="elements-section section" style={{ paddingTop: 0 }}>
-          <SectionContainer className="section-heading compact">
-            <div>
-              <SectionLabel>THE 5 PILLARS</SectionLabel>
-              <EditorialHeading>Elemental Medicine</EditorialHeading>
-            </div>
-            <p>How each sacred element heals and recalibrates your nervous system.</p>
-          </SectionContainer>
-          <SectionContainer>
-            <div className="elements-grid">
-              {elements.map((el) => (
-                <div key={el.key} className="element-card">
-                  <span className="element-num">{el.symbol}</span>
-                  <h3 className="element-name">{el.name} <small>({el.sanskrit})</small></h3>
-                  <p className="element-verb"><strong>Action:</strong> {el.verb}</p>
-                  <p className="element-practice"><strong>Practice:</strong> {el.practice}</p>
-                  <p className="element-detail">{el.detail}</p>
-                </div>
-              ))}
-            </div>
-          </SectionContainer>
-        </section>
-      )}
 
       {/* Bridge to Moments Carried Home & Booking */}
       <section className="section itinerary-bridge-section" style={{ background: "var(--color-surface-sunken, #111a14)", padding: "80px 0" }}>
