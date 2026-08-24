@@ -12,7 +12,8 @@
     "test:media": "node --test tests/media-*.test.mjs",
     "test:homepage": "node --test tests/homepage-content.test.mjs",
     "test:hero": "node --test tests/hero-experience.test.mjs",
-    "test:experience": "node --test tests/experience-module.test.mjs"
+    "test:experience": "node --test tests/experience-module.test.mjs",
+    "images:optimize": "node scripts/optimize-existing-images.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
