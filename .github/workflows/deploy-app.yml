@@ -54,7 +54,7 @@ jobs:
             ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:${{ github.sha }}
             ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
   # ── STAGE 2: DATABASE MIGRATION (Smart Path Filter) ──
   migrate-database:

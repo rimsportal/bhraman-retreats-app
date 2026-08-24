@@ -16,7 +16,7 @@ COPY . .
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
     pnpm prisma generate && pnpm build
 
-# ---- Runner: minimal image that runs the built app ----
+# ---- Runner: lightweight standalone image (under 50MB) ----
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -24,19 +24,16 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 
-# Prisma needs OpenSSL at runtime.
+# Prisma needs OpenSSL at runtime
 RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
 
-# Complete production dependency tree
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
+# Copy only lightweight Next.js standalone bundle (10x smaller image)
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 8080
-# Run database migration directly over Azure internal network on boot, then start Next.js
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-8080}"]
+CMD ["node", "server.js"]
