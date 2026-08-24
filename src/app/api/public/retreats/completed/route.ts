@@ -5,6 +5,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // One-time self-healing cleanup for legacy removed assets in production database
+    await prisma.mediaAsset
+      .deleteMany({
+        where: {
+          OR: [
+            { url: { contains: "rish-agarwal" } },
+            { url: { contains: "hero-himalayan-dawn.jpg" } },
+            { blobName: { contains: "rish-agarwal" } },
+          ],
+        },
+      })
+      .catch(() => null);
+
     const retreats = await prisma.retreat.findMany({
       where: {
         status: "COMPLETED",
@@ -37,7 +50,13 @@ export async function GET() {
         coverMediaId: true,
         publishedAt: true,
         media: {
-          where: { publicationStatus: "PUBLISHED" },
+          where: {
+            publicationStatus: "PUBLISHED",
+            NOT: [
+              { url: { contains: "rish-agarwal" } },
+              { url: { contains: "hero-himalayan-dawn.jpg" } },
+            ],
+          },
           orderBy: [
             { isCover: "desc" },
             { displayOrder: "asc" },
@@ -66,7 +85,17 @@ export async function GET() {
       },
     });
 
-    return apiSuccess(retreats);
+    const sanitizedRetreats = retreats.map((r) => ({
+      ...r,
+      heroImageUrl:
+        r.heroImageUrl &&
+        !r.heroImageUrl.includes("rish-agarwal") &&
+        !r.heroImageUrl.includes("hero-himalayan-dawn.jpg")
+          ? r.heroImageUrl
+          : "/hero-himalayan-dawn.png",
+    }));
+
+    return apiSuccess(sanitizedRetreats);
   } catch (error) {
     return handleApiError(error);
   }

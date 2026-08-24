@@ -17,6 +17,10 @@ export async function GET(request: Request) {
       publicationStatus: "PUBLISHED",
       uploadStatus: "CONFIRMED",
       ...(folder ? { folder } : {}),
+      NOT: [
+        { url: { contains: "rish-agarwal" } },
+        { url: { contains: "hero-himalayan-dawn.jpg" } },
+      ],
     };
     const [items, total] = await prisma.$transaction([
       prisma.mediaAsset.findMany({

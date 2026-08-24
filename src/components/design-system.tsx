@@ -1,9 +1,13 @@
-import type {
-  AnchorHTMLAttributes,
-  BlockquoteHTMLAttributes,
-  HTMLAttributes,
-  ImgHTMLAttributes,
-  ReactNode,
+"use client";
+
+import {
+  type AnchorHTMLAttributes,
+  type BlockquoteHTMLAttributes,
+  type HTMLAttributes,
+  type ImgHTMLAttributes,
+  type ReactNode,
+  useEffect,
+  useState,
 } from "react";
 import { ArrowRight } from "lucide-react";
 
@@ -109,9 +113,16 @@ export function ResponsiveMedia({
   priority = false,
   blurDataUrl,
   style,
+  onError,
   ...props
 }: ResponsiveMediaProps) {
-  if (!src) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  if (!src || hasError) {
     return (
       <span className="image-placeholder" role="img" aria-label={`${fallbackTitle}. ${fallbackHint}`}>
         {fallbackTitle}<br /><small>{fallbackHint}</small>
@@ -137,6 +148,10 @@ export function ResponsiveMedia({
       fetchPriority={priority ? "high" : undefined}
       decoding="async"
       style={combinedStyle}
+      onError={(e) => {
+        setHasError(true);
+        onError?.(e);
+      }}
       {...props}
     />
   );

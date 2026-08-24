@@ -325,12 +325,32 @@ export function mapHomepageResponses(results: {
     elements: mapElements(settings["home.elements"]),
     retreat: envelopeData(results.retreat),
     upcomingRetreats: envelopeData(results.upcoming) ?? [],
-    completedRetreats: envelopeData(results.completed) ?? [],
+    completedRetreats: (envelopeData(results.completed) ?? []).map((cr) => ({
+      ...cr,
+      heroImageUrl:
+        cr.heroImageUrl &&
+        !cr.heroImageUrl.includes("hero-himalayan-dawn.jpg") &&
+        !cr.heroImageUrl.includes("rish-agarwal")
+          ? cr.heroImageUrl
+          : "/hero-himalayan-dawn.png",
+      media: (cr.media || []).filter(
+        (m) =>
+          m.url &&
+          !m.url.includes("rish-agarwal") &&
+          !m.url.includes("hero-himalayan-dawn.jpg")
+      ),
+    })),
     founder: envelopeData(results.founder),
     testimonials: (envelopeData(results.testimonials) ?? []).slice(0, 3),
     blog: (envelopeData(results.blogs) ?? [])[0] ?? null,
     quotes: (envelopeData(results.quotes) ?? []).slice(0, 6),
-    media: (envelopeData(results.media) ?? []).filter((asset) => asset.kind === "IMAGE" || asset.mimeType.startsWith("image/")),
+    media: (envelopeData(results.media) ?? [])
+      .filter(
+        (asset) =>
+          (asset.kind === "IMAGE" || asset.mimeType.startsWith("image/")) &&
+          !asset.url.includes("rish-agarwal") &&
+          !asset.url.includes("hero-himalayan-dawn.jpg")
+      ),
     mediaSlots: mapMediaSlots(settings["media.slots"]),
     unavailable,
   };

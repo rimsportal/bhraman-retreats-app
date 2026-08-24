@@ -46,7 +46,12 @@ export function RetreatMemories({
   }, [completedRetreats, selectedSlug]);
 
   const allMedia = useMemo(() => {
-    return activeRetreat?.media || [];
+    return (activeRetreat?.media || []).filter(
+      (m) =>
+        m.url &&
+        !m.url.includes("rish-agarwal") &&
+        !m.url.includes("hero-himalayan-dawn.jpg")
+    );
   }, [activeRetreat]);
 
   const imageMedia = useMemo(() => {
