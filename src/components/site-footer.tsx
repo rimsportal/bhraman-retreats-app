@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Instagram, Mail, Phone, Sparkles, User } from "lucide-react";
+import { ArrowUpRight, Instagram, Mail, Phone, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteFooter() {
@@ -27,70 +27,114 @@ export function SiteFooter() {
           <p className="footer-summary">
             Immersive Himalayan journeys curated around the five sacred elements — Prithvi (Earth), Jala (Water), Agni (Fire), Vāyu (Air), and Ākāśa (Space).
           </p>
+          <div className="footer-edition-chip">
+            <span>Ladakh Edition 2.0</span>
+            <span className="edition-divider">·</span>
+            <span>June – Sept 2026</span>
+          </div>
         </div>
 
         {/* Column 2: Founder & Direct Contact */}
         <div className="footer-col footer-col-contact">
-          <h4 className="footer-heading">
-            <Sparkles size={14} className="footer-heading-icon" /> Founder &amp; Inquiries
-          </h4>
-
-          <div className="footer-founder-card">
-            <div className="footer-founder-name">
-              <User size={14} /> Dr. Pratiksha Shekhawat
-            </div>
-            <span className="footer-founder-role">Founder &amp; Elemental Therapist</span>
+          <div className="footer-eyebrow-wrap">
+            <Sparkles size={12} className="footer-eyebrow-icon" />
+            <span className="footer-eyebrow-text">Founder &amp; Sanctuary Inquiries</span>
           </div>
 
-          <ul className="footer-contact-list">
-            <li>
-              <a
-                href="tel:+918700402837"
-                className="footer-contact-link"
-                aria-label="Call Dr. Pratiksha Shekhawat"
-              >
-                <Phone size={14} />
-                <span>+91 87004 02837</span>
-              </a>
-            </li>
+          {/* Luxury Founder Card */}
+          <div className="founder-sanctuary-card">
+            <div className="founder-avatar-wrap">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/hero-yoga-lamayuru.jpg"
+                alt="Dr. Pratiksha Shekhawat"
+                className="founder-avatar-img"
+              />
+              <span className="founder-avatar-status" title="Active Sanctuary Guide" />
+            </div>
 
-            <li>
-              <a
-                href="mailto:bhramanretreats@gmail.com"
-                className="footer-contact-link"
-                aria-label="Email Bhraman Retreats"
-              >
-                <Mail size={14} />
-                <span>bhramanretreats@gmail.com</span>
-              </a>
-            </li>
+            <div className="founder-info-block">
+              <h4 className="founder-name">Dr. Pratiksha Shekhawat</h4>
+              <p className="founder-title">Founder · Elemental Therapist &amp; Medical Doctor</p>
+              <div className="founder-badge">
+                <span className="badge-dot" />
+                <span>Intimate Circles of 12 Travellers</span>
+              </div>
+            </div>
+          </div>
 
-            <li>
-              <a
-                href="https://instagram.com/bhramanretreats"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-contact-link"
-                aria-label="Follow Bhraman Retreats on Instagram"
-              >
-                <Instagram size={14} />
-                <span>@bhramanretreats</span>
-              </a>
-            </li>
-          </ul>
+          {/* Luxury Interactive Contact Channels */}
+          <div className="luxury-contact-grid">
+            <a
+              href="https://wa.me/918700402837"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="luxury-contact-card card-phone"
+              aria-label="WhatsApp or Call Dr. Pratiksha Shekhawat"
+            >
+              <div className="contact-icon-pill icon-wa">
+                <Phone size={13} />
+              </div>
+              <div className="contact-meta">
+                <span className="contact-label">Direct &amp; WhatsApp</span>
+                <span className="contact-value">+91 87004 02837</span>
+              </div>
+              <span className="contact-action-arrow">
+                Chat <ArrowUpRight size={12} />
+              </span>
+            </a>
+
+            <a
+              href="mailto:bhramanretreats@gmail.com"
+              className="luxury-contact-card card-email"
+              aria-label="Email Bhraman Retreats"
+            >
+              <div className="contact-icon-pill icon-email">
+                <Mail size={13} />
+              </div>
+              <div className="contact-meta">
+                <span className="contact-label">Email Inquiries</span>
+                <span className="contact-value">bhramanretreats@gmail.com</span>
+              </div>
+              <span className="contact-action-arrow">
+                Write <ArrowUpRight size={12} />
+              </span>
+            </a>
+
+            <a
+              href="https://instagram.com/bhramanretreats"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="luxury-contact-card card-instagram"
+              aria-label="Follow Bhraman Retreats on Instagram"
+            >
+              <div className="contact-icon-pill icon-ig">
+                <Instagram size={13} />
+              </div>
+              <div className="contact-meta">
+                <span className="contact-label">Himalayan Stories</span>
+                <span className="contact-value">@bhramanretreats</span>
+              </div>
+              <span className="contact-action-arrow">
+                Follow <ArrowUpRight size={12} />
+              </span>
+            </a>
+          </div>
         </div>
 
         {/* Column 3: Navigation Links */}
         <div className="footer-col footer-col-nav">
-          <h4 className="footer-heading">Retreat Journeys</h4>
+          <div className="footer-eyebrow-wrap">
+            <span className="footer-eyebrow-text">Retreat Journeys</span>
+          </div>
           <nav className="footer-links-grid" aria-label="Footer navigation">
-            <Link href="/#philosophy">Our Story</Link>
-            <Link href="/#elements">The 5 Elements</Link>
-            <Link href="/itinerary">Daily Itinerary</Link>
+            <Link href="/#philosophy">Our Story &amp; Philosophy</Link>
+            <Link href="/#elements">The 5 Sacred Elements</Link>
+            <Link href="/itinerary">5-Day Daily Itinerary</Link>
             <Link href="/moments">Moments Carried Home</Link>
-            <Link href="/upcoming-retreats">Upcoming Retreats</Link>
-            <Link href="/testimonials">Guest Voices</Link>
-            <Link href="/#enquiry">Request a Place</Link>
+            <Link href="/upcoming-retreats">Upcoming Retreat Editions</Link>
+            <Link href="/testimonials">Guest Voices &amp; Films</Link>
+            <Link href="/#enquiry">Request a Himalayan Place</Link>
           </nav>
         </div>
       </div>
