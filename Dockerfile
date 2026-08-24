@@ -38,4 +38,5 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 8080
-CMD ["sh", "-c", "node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-8080}"]
+# Run database migration directly over Azure internal network on boot, then start Next.js
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-8080}"]

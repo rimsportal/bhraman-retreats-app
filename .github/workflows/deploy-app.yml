@@ -24,7 +24,6 @@ env:
 
 jobs:
   # ── STAGE 1: BUILD & PUSH CONTAINER (GHA Layer Cached) ──
-  # Guarantees the build & code compile 100% successfully BEFORE touching the database.
   build-and-push-image:
     name: "1. Build & Push Container (GHA Cached)"
     runs-on: ubuntu-latest
@@ -57,17 +56,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── STAGE 2: DATABASE MIGRATION (Only runs after Build succeeds) ──
+  # ── STAGE 2: DATABASE MIGRATION (Smart Path Filter) ──
   migrate-database:
     name: "2. Apply Database Migrations"
     needs: [build-and-push-image]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'dev' }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (fetch history for diff check)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if migrations changed
+        id: filter
+        run: |
+          # Check if prisma migrations or schema were modified in this commit
+          if git diff --name-only HEAD~1 HEAD | grep -E '^prisma/(migrations|schema\.prisma)'; then
+            echo "migrations_changed=true" >> $GITHUB_OUTPUT
+            echo "Database migrations detected in this commit."
+          else
+            echo "migrations_changed=false" >> $GITHUB_OUTPUT
+            echo "⏩ No database migrations changed. Skipping firewall and database steps."
+          fi
 
       - name: Azure login (OIDC)
+        if: steps.filter.outputs.migrations_changed == 'true'
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
@@ -75,20 +89,24 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: Setup pnpm
+        if: steps.filter.outputs.migrations_changed == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 11.15.0
 
       - name: Setup Node.js (with pnpm cache)
+        if: steps.filter.outputs.migrations_changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
 
       - name: Install dependencies
+        if: steps.filter.outputs.migrations_changed == 'true'
         run: pnpm install --frozen-lockfile --config.ignore-scripts=true
 
       - name: Apply Prisma database migrations
+        if: steps.filter.outputs.migrations_changed == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -108,7 +126,7 @@ jobs:
           trap 'fw delete --yes >/dev/null 2>&1 || true' EXIT
           pnpm prisma migrate deploy
 
-  # ── STAGE 3: RESTART APP SERVICE (Only after Build & Migrations succeed) ──
+  # ── STAGE 3: RESTART APP SERVICE ──
   deploy-app:
     name: "3. Restart App Service"
     needs: [migrate-database]
