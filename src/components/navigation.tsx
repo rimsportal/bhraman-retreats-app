@@ -11,6 +11,8 @@ export function Navigation() {
   const pathname = usePathname();
 
   const isHome = pathname === "/";
+  const isItineraryPage = pathname === "/itinerary";
+  const isMomentsPage = pathname === "/moments";
   const isUpcomingPage = pathname === "/upcoming-retreats";
   const isTestimonialsPage = pathname === "/testimonials";
 
@@ -54,6 +56,22 @@ export function Navigation() {
           The elements
         </a>
         <a
+          href="/itinerary"
+          className={linkClass(isItineraryPage)}
+          onClick={() => setOpen(false)}
+          aria-current={isItineraryPage ? "page" : undefined}
+        >
+          Itinerary
+        </a>
+        <a
+          href="/moments"
+          className={linkClass(isMomentsPage)}
+          onClick={() => setOpen(false)}
+          aria-current={isMomentsPage ? "page" : undefined}
+        >
+          Moments
+        </a>
+        <a
           href="/upcoming-retreats"
           className={linkClass(isUpcomingPage)}
           onClick={() => setOpen(false)}
@@ -68,13 +86,6 @@ export function Navigation() {
           aria-current={isTestimonialsPage ? "page" : undefined}
         >
           Guest voices
-        </a>
-        <a
-          href={isHome ? "#itinerary" : "/#itinerary"}
-          className={linkClass(false)}
-          onClick={() => setOpen(false)}
-        >
-          Itinerary
         </a>
       </nav>
 
