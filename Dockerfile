@@ -7,14 +7,14 @@ RUN corepack enable && corepack prepare pnpm@11.15.0 --activate
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json pnpm-lock.yaml .npmrc* ./
-# ignore-scripts avoids pnpm's interactive "approve-builds" gate in CI; we run
-# `prisma generate` explicitly below, and no other package needs a build step.
-RUN pnpm install --frozen-lockfile --config.ignore-scripts=true
+# Cache pnpm store across builds for superfast installs
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --config.ignore-scripts=true
 
 COPY . .
-# Keep all deps (incl. typescript) so `next start` can load next.config.ts.
-RUN pnpm prisma generate \
- && pnpm build
+# Cache Next.js compilation artifact cache across builds
+RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
+    pnpm prisma generate && pnpm build
 
 # ---- Runner: minimal image that runs the built app ----
 FROM node:22-bookworm-slim AS runner
@@ -29,8 +29,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
 
-# Complete production dependency tree — no Next standalone tracing, so none of
-# Next's runtime deps (styled-jsx, @swc/helpers, @next/env, ...) can go missing.
+# Complete production dependency tree
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
