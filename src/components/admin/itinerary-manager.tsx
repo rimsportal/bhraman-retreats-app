@@ -283,7 +283,6 @@ export function ItineraryManager() {
               }))
             );
           } else {
-            // Default template if no days yet
             setDays(DEFAULT_DAYS_TEMPLATE);
           }
         }
@@ -400,7 +399,8 @@ export function ItineraryManager() {
   };
 
   // Save changes
-  const handleSaveAll = async () => {
+  const handleSaveAll = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedRetreatId) {
       setError("Please select a retreat to save the itinerary for.");
       return;
@@ -411,7 +411,6 @@ export function ItineraryManager() {
     setMessage(null);
 
     try {
-      // 1. Save Itinerary Days to Retreat
       const itineraryPayload = {
         days: days.map((d, dIdx) => ({
           dayNumber: d.dayNumber || dIdx + 1,
@@ -449,7 +448,6 @@ export function ItineraryManager() {
         throw new Error(errPayload.error?.message || "Failed to update retreat itinerary.");
       }
 
-      // 2. Save Global Itinerary Copy Settings
       const settingsRes = await fetch("/api/admin/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -464,7 +462,7 @@ export function ItineraryManager() {
         console.warn("Could not persist home.content itinerary settings directly");
       }
 
-      flash("Itinerary and retreat rhythm successfully saved and published!");
+      flash("Itinerary rhythm and daily elemental sessions successfully saved and published!");
     } catch (err: any) {
       setError(err.message || "Failed to save itinerary.");
     } finally {
@@ -482,155 +480,137 @@ export function ItineraryManager() {
 
   if (loading) {
     return (
-      <div className="admin-loading" style={{ padding: "60px 0", textAlign: "center" }}>
-        <Loader2 className="spinner" size={32} />
-        <p style={{ marginTop: "12px", color: "var(--color-text-muted)" }}>Loading itinerary manager...</p>
+      <div className="admin-card">
+        <p className="admin-loading">
+          <Loader2 className="spin" size={18} /> Loading itinerary manager...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="itinerary-manager-wrap" style={{ maxWidth: "1000px", margin: "0 auto" }}>
-      {/* Top Banner & Flash Messages */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
+    <form className="admin-card" onSubmit={handleSaveAll}>
+      {/* Head Banner matching Founder Story */}
+      <div className="admin-retreats-head" style={{ marginBottom: "24px" }}>
         <div>
-          <h2 style={{ fontSize: "24px", fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: "10px" }}>
-            <Compass size={24} style={{ color: "var(--color-primary-light, #c69b49)" }} />
-            Retreat Itinerary Manager
-          </h2>
-          <p style={{ color: "var(--color-text-muted, #9eb3a8)", fontSize: "14px", marginTop: "4px" }}>
-            Control the 5-day elemental rhythm, daily practices, schedule notes, and titles displayed on <code>/itinerary</code> and the homepage.
+          <h2>Retreat Itinerary &amp; Daily Rhythm</h2>
+          <p className="admin-note">
+            Control the 5-day elemental schedule, daily practices, schedule notes, and titles displayed on <code>/itinerary</code> and the homepage.
           </p>
         </div>
-
         <div style={{ display: "flex", gap: "12px" }}>
           <button
             type="button"
             onClick={handleResetToTemplate}
-            className="btn btn-secondary"
-            style={{ fontSize: "13px", padding: "8px 16px" }}
+            className="button"
+            style={{ background: "#f0f4ee", border: "1px solid #ccd6c8", color: "#223024" }}
             title="Reset to 5-day elemental template"
           >
-            <RotateCcw size={14} style={{ marginRight: "6px" }} /> Template
+            <RotateCcw size={14} /> Template
           </button>
-          <button
-            type="button"
-            onClick={handleSaveAll}
-            disabled={saving}
-            className="btn btn-primary"
-            style={{ fontSize: "14px", padding: "8px 20px" }}
+          <button type="submit" className="button button-dark" disabled={saving}>
+            {saving ? "Saving…" : "Save Itinerary"}
+          </button>
+        </div>
+      </div>
+
+      {message && <p className="admin-flash">{message}</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+
+      {/* ── SECTION 1: TARGET RETREAT SELECTOR ── */}
+      <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
+        <h3 style={{ margin: "0 0 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
+          <Compass size={18} color="#7b3a34" /> 1. Target Retreat
+        </h3>
+        <label>
+          Selected Retreat
+          <select
+            value={selectedRetreatId}
+            onChange={(e) => setSelectedRetreatId(e.target.value)}
+            style={{ width: "100%", marginTop: "6px" }}
           >
-            {saving ? <Loader2 className="spinner" size={16} /> : <Check size={16} />}
-            {saving ? "Saving..." : "Save & Publish Itinerary"}
-          </button>
-        </div>
-      </div>
-
-      {message && (
-        <div style={{ padding: "12px 16px", background: "rgba(46, 125, 50, 0.2)", border: "1px solid #4caf50", borderRadius: "8px", color: "#a5d6a7", marginBottom: "20px" }}>
-          {message}
-        </div>
-      )}
-
-      {error && (
-        <div style={{ padding: "12px 16px", background: "rgba(211, 47, 47, 0.2)", border: "1px solid #f44336", borderRadius: "8px", color: "#ef9a9a", marginBottom: "20px" }}>
-          {error}
-        </div>
-      )}
-
-      {/* 1. Target Retreat Selector */}
-      <div style={{ background: "var(--color-surface-elevated, #16201a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
-        <label style={{ display: "block", fontSize: "13px", color: "var(--color-primary-light, #c69b49)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600, marginBottom: "8px" }}>
-          Target Retreat
+            {retreats.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.title} ({r.edition || r.slug}) [{r.status}]
+              </option>
+            ))}
+          </select>
         </label>
-        <select
-          value={selectedRetreatId}
-          onChange={(e) => setSelectedRetreatId(e.target.value)}
-          style={{ width: "100%", padding: "12px 16px", borderRadius: "8px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontSize: "15px" }}
-        >
-          {retreats.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.title} ({r.edition || r.slug}) [{r.status}]
-            </option>
-          ))}
-        </select>
+        <p className="admin-note" style={{ margin: "6px 0 0" }}>
+          The itinerary days below will be saved and published for this retreat edition.
+        </p>
       </div>
 
-      {/* 2. Global Itinerary Section Copy */}
-      <div style={{ background: "var(--color-surface-elevated, #16201a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "20px", marginBottom: "28px" }}>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#fff", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Sparkles size={16} style={{ color: "var(--color-primary-light, #c69b49)" }} />
-          Itinerary Section Headings & Copy
+      {/* ── SECTION 2: GLOBAL ITINERARY HEADINGS & COPY ── */}
+      <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
+        <h3 style={{ margin: "0 0 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
+          <Sparkles size={18} color="#7b3a34" /> 2. Section Headings &amp; Intro Copy
         </h3>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Section Eyebrow / Label</label>
+        <div className="admin-grid">
+          <label>
+            Section Label / Eyebrow
             <input
-              type="text"
               value={settings.itineraryLabel}
               onChange={(e) => setSettings({ ...settings, itineraryLabel: e.target.value })}
-              style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
+              placeholder="e.g. YOUR FIVE-DAY RHYTHM"
             />
-          </div>
+          </label>
 
-          <div>
-            <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Main Title & Emphasis</label>
+          <label>
+            Main Title &amp; Emphasis
             <div style={{ display: "flex", gap: "8px" }}>
               <input
-                type="text"
                 value={settings.itineraryTitle}
                 onChange={(e) => setSettings({ ...settings, itineraryTitle: e.target.value })}
                 placeholder="Title (e.g. A journey that)"
-                style={{ flex: 1, padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
+                style={{ flex: 1 }}
               />
               <input
-                type="text"
                 value={settings.itineraryEmphasis}
                 onChange={(e) => setSettings({ ...settings, itineraryEmphasis: e.target.value })}
                 placeholder="Emphasis (e.g. unfolds slowly.)"
-                style={{ flex: 1, padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
+                style={{ flex: 1 }}
               />
             </div>
-          </div>
+          </label>
         </div>
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Introduction Paragraph</label>
-          <textarea
-            rows={2}
-            value={settings.itineraryIntro}
-            onChange={(e) => setSettings({ ...settings, itineraryIntro: e.target.value })}
-            style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
-          />
+        <div style={{ marginTop: "16px" }}>
+          <label>
+            Introduction Paragraph
+            <textarea
+              rows={2}
+              value={settings.itineraryIntro}
+              onChange={(e) => setSettings({ ...settings, itineraryIntro: e.target.value })}
+            />
+          </label>
         </div>
 
-        <div>
-          <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Schedule Note / Booking Disclaimer</label>
-          <input
-            type="text"
-            value={settings.itineraryNote}
-            onChange={(e) => setSettings({ ...settings, itineraryNote: e.target.value })}
-            style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
-          />
+        <div style={{ marginTop: "16px" }}>
+          <label>
+            Schedule Note / Booking Disclaimer
+            <input
+              value={settings.itineraryNote}
+              onChange={(e) => setSettings({ ...settings, itineraryNote: e.target.value })}
+              placeholder="e.g. The complete time-by-time schedule becomes available after your place is confirmed."
+            />
+          </label>
         </div>
       </div>
 
-      {/* 3. Day by Day Schedule Editor */}
-      <div style={{ marginBottom: "32px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
-            <CalendarDays size={18} style={{ color: "var(--color-primary-light, #c69b49)" }} />
-            Daily Elemental Schedule ({days.length} Days)
+      {/* ── SECTION 3: DAILY ELEMENTAL SCHEDULE ── */}
+      <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
+            <CalendarDays size={18} color="#7b3a34" /> 3. Daily Elemental Schedule ({days.length} Days)
           </h3>
-
           <button
             type="button"
+            className="admin-add"
             onClick={handleAddDay}
-            className="btn btn-secondary"
-            style={{ fontSize: "13px", padding: "6px 14px" }}
           >
-            <Plus size={14} style={{ marginRight: "4px" }} /> Add Day
+            <Plus size={15} /> Add Day
           </button>
         </div>
 
@@ -642,40 +622,44 @@ export function ItineraryManager() {
               <div
                 key={dayIndex}
                 style={{
-                  background: "var(--color-surface-elevated, #16201a)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "12px",
+                  background: "#ffffff",
+                  border: "1px solid #ccd6c8",
+                  borderRadius: "8px",
                   overflow: "hidden",
                 }}
               >
-                {/* Day Header Bar */}
+                {/* Day Header Row */}
                 <div
                   style={{
-                    padding: "16px 20px",
+                    padding: "14px 18px",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     cursor: "pointer",
-                    background: isExpanded ? "rgba(255,255,255,0.03)" : "transparent",
-                    borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.08)" : "none",
+                    background: isExpanded ? "#f4f7f2" : "#ffffff",
+                    borderBottom: isExpanded ? "1px solid #e2e8de" : "none",
                   }}
                   onClick={() => setExpandedDay(isExpanded ? null : day.dayNumber)}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <span
                       style={{
                         display: "inline-block",
-                        padding: "4px 10px",
-                        background: "rgba(198, 155, 73, 0.15)",
-                        color: "var(--color-primary-light, #c69b49)",
-                        borderRadius: "6px",
+                        padding: "3px 9px",
+                        background: "#fdf3e7",
+                        color: "#7b3a34",
+                        border: "1px solid #f2cfab",
+                        borderRadius: "4px",
                         fontWeight: 700,
-                        fontSize: "13px",
+                        fontSize: "12px",
+                        letterSpacing: "0.05em",
                       }}
                     >
                       DAY 0{day.dayNumber} · {day.element}
                     </span>
-                    <strong style={{ color: "#fff", fontSize: "16px" }}>{day.title || "Untitled Day"}</strong>
+                    <strong style={{ color: "#1d281f", fontSize: "15px" }}>
+                      {day.title || "Untitled Day"}
+                    </strong>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -685,25 +669,25 @@ export function ItineraryManager() {
                         e.stopPropagation();
                         handleRemoveDay(dayIndex);
                       }}
-                      style={{ background: "transparent", border: "none", color: "#f44336", cursor: "pointer", padding: "4px" }}
+                      className="admin-delete"
+                      style={{ padding: "4px 8px", fontSize: "12px" }}
                       title="Delete Day"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={13} /> Remove
                     </button>
-                    {isExpanded ? <ChevronUp size={18} color="#9eb3a8" /> : <ChevronDown size={18} color="#9eb3a8" />}
+                    {isExpanded ? <ChevronUp size={16} color="#666" /> : <ChevronDown size={16} color="#666" />}
                   </div>
                 </div>
 
                 {/* Day Details Drawer */}
                 {isExpanded && (
                   <div style={{ padding: "20px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "16px", marginBottom: "16px" }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Element</label>
+                    <div className="admin-grid">
+                      <label>
+                        Element
                         <select
                           value={day.element}
                           onChange={(e) => handleUpdateDay(dayIndex, "element", e.target.value)}
-                          style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
                         >
                           {ELEMENTS.map((el) => (
                             <option key={el} value={el}>
@@ -711,40 +695,42 @@ export function ItineraryManager() {
                             </option>
                           ))}
                         </select>
-                      </div>
+                      </label>
 
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Day Focus / Title</label>
+                      <label>
+                        Day Focus / Title
                         <input
                           type="text"
                           value={day.title}
                           onChange={(e) => handleUpdateDay(dayIndex, "title", e.target.value)}
-                          style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
+                          placeholder="e.g. Arrive, ground and slow down"
                         />
-                      </div>
+                      </label>
                     </div>
 
-                    <div style={{ marginBottom: "20px" }}>
-                      <label style={{ display: "block", fontSize: "12px", color: "#9eb3a8", marginBottom: "6px" }}>Day Summary & Reflection</label>
-                      <textarea
-                        rows={2}
-                        value={day.description || ""}
-                        onChange={(e) => handleUpdateDay(dayIndex, "description", e.target.value)}
-                        placeholder="Brief summary of the day's intention and practices..."
-                        style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#0e1511", border: "1px solid rgba(255,255,255,0.15)", color: "#fff" }}
-                      />
+                    <div style={{ marginTop: "16px" }}>
+                      <label>
+                        Day Summary &amp; Reflection Note
+                        <textarea
+                          rows={2}
+                          value={day.description || ""}
+                          onChange={(e) => handleUpdateDay(dayIndex, "description", e.target.value)}
+                          placeholder="Brief summary of the day's intention and practices..."
+                        />
+                      </label>
                     </div>
 
-                    {/* Sections & Activities */}
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "16px" }}>
+                    {/* Timeline Sessions Block */}
+                    <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid #e8ede6" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "1px" }}>
-                          Timeline & Sessions
-                        </span>
+                        <h4 style={{ margin: 0, fontSize: "14px", color: "#7b3a34", fontWeight: 600 }}>
+                          Timeline Sessions &amp; Practices
+                        </h4>
                         <button
                           type="button"
                           onClick={() => handleAddSection(dayIndex)}
-                          style={{ background: "transparent", border: "none", color: "var(--color-primary-light, #c69b49)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                          className="admin-add"
+                          style={{ fontSize: "12px", padding: "4px 10px" }}
                         >
                           <Plus size={13} /> Add Session Block
                         </button>
@@ -754,11 +740,11 @@ export function ItineraryManager() {
                         <div
                           key={sIdx}
                           style={{
-                            background: "#0c130f",
-                            border: "1px solid rgba(255,255,255,0.06)",
-                            borderRadius: "8px",
-                            padding: "16px",
-                            marginBottom: "14px",
+                            background: "#fbfcf9",
+                            border: "1px solid #e2e8de",
+                            borderRadius: "6px",
+                            padding: "14px",
+                            marginBottom: "12px",
                           }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -771,13 +757,14 @@ export function ItineraryManager() {
                                 setDays(next);
                               }}
                               placeholder="Session Name (e.g. Morning Practice)"
-                              style={{ width: "240px", padding: "6px 10px", borderRadius: "4px", background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: "13px", fontWeight: 600 }}
+                              style={{ width: "240px", fontWeight: 600, fontSize: "13px" }}
                             />
 
                             <button
                               type="button"
                               onClick={() => handleRemoveSection(dayIndex, sIdx)}
-                              style={{ background: "transparent", border: "none", color: "#f44336", cursor: "pointer", fontSize: "12px" }}
+                              className="admin-delete"
+                              style={{ padding: "3px 8px", fontSize: "11px" }}
                             >
                               Remove Block
                             </button>
@@ -788,7 +775,7 @@ export function ItineraryManager() {
                             {section.activities.map((act, aIdx) => (
                               <div key={aIdx} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                 <div style={{ width: "110px", display: "flex", alignItems: "center", gap: "4px" }}>
-                                  <Clock size={13} color="#9eb3a8" />
+                                  <Clock size={13} color="#7b3a34" />
                                   <input
                                     type="text"
                                     value={act.startTime || ""}
@@ -796,7 +783,7 @@ export function ItineraryManager() {
                                       handleUpdateActivity(dayIndex, sIdx, aIdx, "startTime", e.target.value)
                                     }
                                     placeholder="06:30 AM"
-                                    style={{ width: "100%", padding: "6px 8px", borderRadius: "4px", background: "#16201a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: "12px" }}
+                                    style={{ width: "100%", fontSize: "12px", padding: "6px 8px" }}
                                   />
                                 </div>
 
@@ -807,16 +794,17 @@ export function ItineraryManager() {
                                     handleUpdateActivity(dayIndex, sIdx, aIdx, "title", e.target.value)
                                   }
                                   placeholder="Activity description (e.g. Jala breathwork on terrace)"
-                                  style={{ flex: 1, padding: "6px 10px", borderRadius: "4px", background: "#16201a", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: "13px" }}
+                                  style={{ flex: 1, fontSize: "13px", padding: "6px 10px" }}
                                 />
 
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveActivity(dayIndex, sIdx, aIdx)}
-                                  style={{ background: "transparent", border: "none", color: "#888", cursor: "pointer", padding: "4px" }}
+                                  className="admin-delete"
+                                  style={{ padding: "4px" }}
                                   title="Delete Activity"
                                 >
-                                  <Trash2 size={14} />
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             ))}
@@ -824,7 +812,19 @@ export function ItineraryManager() {
                             <button
                               type="button"
                               onClick={() => handleAddActivity(dayIndex, sIdx)}
-                              style={{ background: "transparent", border: "none", color: "var(--color-primary-light, #c69b49)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px", marginTop: "6px", alignSelf: "flex-start" }}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#7b3a34",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                marginTop: "6px",
+                                alignSelf: "flex-start",
+                              }}
                             >
                               <Plus size={13} /> Add Activity Item
                             </button>
@@ -839,6 +839,12 @@ export function ItineraryManager() {
           })}
         </div>
       </div>
-    </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button type="submit" className="button button-dark" disabled={saving}>
+          {saving ? "Saving…" : "Save Itinerary"}
+        </button>
+      </div>
+    </form>
   );
 }
