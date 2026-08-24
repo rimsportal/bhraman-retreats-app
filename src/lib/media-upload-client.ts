@@ -1,5 +1,7 @@
 "use client";
 
+import { optimizeImageForUpload } from "@/lib/image-optimizer";
+
 type ApiEnvelope<T> = { data: T; error?: never } | { data?: never; error: { message?: string } | string };
 
 type UploadAuthorization = {
@@ -43,9 +45,11 @@ async function readApi<T>(response: Response): Promise<T> {
 }
 
 export async function uploadMediaForReview(
-  file: File,
+  inputFile: File,
   metadata: { folder: string; altText: string; title?: string },
 ) {
+  const { file, width, height } = await optimizeImageForUpload(inputFile);
+
   const authorizationResponse = await fetch("/api/admin/media/uploads/authorize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -56,6 +60,8 @@ export async function uploadMediaForReview(
       sizeBytes: file.size,
       altText: metadata.altText,
       title: metadata.title,
+      width,
+      height,
     }),
   });
   const authorization = await readApi<UploadAuthorization>(authorizationResponse);

@@ -97,6 +97,7 @@ type ResponsiveMediaProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   fallbackTitle: string;
   fallbackHint?: string;
   priority?: boolean;
+  blurDataUrl?: string;
 };
 
 export function ResponsiveMedia({
@@ -106,6 +107,8 @@ export function ResponsiveMedia({
   fallbackTitle,
   fallbackHint = "Image reference not configured",
   priority = false,
+  blurDataUrl,
+  style,
   ...props
 }: ResponsiveMediaProps) {
   if (!src) {
@@ -116,6 +119,15 @@ export function ResponsiveMedia({
     );
   }
 
+  const combinedStyle = blurDataUrl
+    ? {
+        backgroundImage: `url("${blurDataUrl}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        ...style,
+      }
+    : style;
+
   return (
     <img
       className={classes("slot-img", "responsive-media", className)}
@@ -124,6 +136,7 @@ export function ResponsiveMedia({
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : undefined}
       decoding="async"
+      style={combinedStyle}
       {...props}
     />
   );
