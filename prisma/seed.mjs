@@ -131,17 +131,20 @@ async function seedRetreat(definition) {
     create: definition,
   });
 
-  await prisma.$transaction(async (tx) => {
-    await tx.retreatDay.deleteMany({ where: { retreatId: retreat.id } });
-    for (const day of itinerary) {
-      await tx.retreatDay.create({
-        data: {
-          retreatId: retreat.id,
-          ...dayCreate(day),
-        },
-      });
-    }
-  });
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.retreatDay.deleteMany({ where: { retreatId: retreat.id } });
+      for (const day of itinerary) {
+        await tx.retreatDay.create({
+          data: {
+            retreatId: retreat.id,
+            ...dayCreate(day),
+          },
+        });
+      }
+    },
+    { timeout: 30000, maxWait: 10000 }
+  );
 }
 
 async function main() {
