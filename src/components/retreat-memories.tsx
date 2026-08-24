@@ -299,7 +299,7 @@ export function RetreatMemories({
               >
                 <div className="memory-card-media">
                   <ResponsiveMedia
-                    src={asset.url}
+                    src={asset.thumbnailUrl || asset.url}
                     alt={asset.altText || asset.title || "Retreat moment"}
                     fallbackTitle={asset.title ?? "Bhraman memory"}
                   />

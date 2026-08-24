@@ -1,5 +1,4 @@
 import { CalendarDays, MapPin, Sparkles } from "lucide-react";
-import nextDynamic from "next/dynamic";
 import { headers } from "next/headers";
 import { BrandLogo } from "@/components/brand-logo";
 import { CinematicHero } from "@/components/cinematic-hero";
@@ -14,20 +13,15 @@ import {
   SectionContainer,
   SectionLabel,
 } from "@/components/design-system";
+import { EnquiryForm } from "@/components/enquiry-form";
 import { PhilosophyParagraphs } from "@/components/philosophy-paragraphs";
 import { ExperienceBhraman } from "@/components/experiences/experience-bhraman";
 import { Itinerary, type ItineraryItem } from "@/components/itinerary";
 import { Fireflies } from "@/components/nature-effects";
 import { FounderStorySection } from "@/components/founder-story-section";
+import { RetreatMemories } from "@/components/retreat-memories";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { formatDateRange, getHomepageData, type MediaContent } from "@/lib/content";
-
-const RetreatMemories = nextDynamic(
-  () => import("@/components/retreat-memories").then((mod) => mod.RetreatMemories)
-);
-const EnquiryForm = nextDynamic(
-  () => import("@/components/enquiry-form").then((mod) => mod.EnquiryForm)
-);
 
 export const dynamic = "force-dynamic";
 
