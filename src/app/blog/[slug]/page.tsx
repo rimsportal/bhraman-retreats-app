@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, Clock, MessageCircle, Sparkles, User } from "lucid
 import { BrandLogo } from "@/components/brand-logo";
 import { ResponsiveMedia } from "@/components/design-system";
 import { getBlogPost } from "@/lib/content";
+import { BlogPostSchema } from "@/lib/schema-org";
 
 async function origin() {
   const incomingHeaders = await headers();
@@ -16,17 +17,44 @@ async function origin() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getBlogPost(await origin(), slug);
-  return post ? { title: `${post.title} | Bhraman Retreats Himalayan Journal`, description: post.excerpt } : {};
+  const baseUrl = await origin();
+  const post = await getBlogPost(baseUrl, slug);
+  if (!post) return {};
+
+  const title = `${post.title} | Bhraman Retreats Himalayan Journal`;
+  const description = post.excerpt;
+  const image = post.coverImageUrl ? (post.coverImageUrl.startsWith("http") ? post.coverImageUrl : `${baseUrl}${post.coverImageUrl}`) : `${baseUrl}/hero-yoga-lamayuru.jpg`;
+
+  return {
+    title,
+    description,
+    authors: [{ name: post.authorName ?? "Dr. Pratiksha Shekhawat" }],
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      publishedTime: post.publishedAt ?? undefined,
+      authors: [post.authorName ?? "Dr. Pratiksha Shekhawat"],
+      images: [{ url: image, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await getBlogPost(await origin(), slug);
+  const baseUrl = await origin();
+  const post = await getBlogPost(baseUrl, slug);
   if (!post) notFound();
 
   return (
     <main className="journal-page">
+      <BlogPostSchema baseUrl={baseUrl} post={post} />
       <header className="journal-page-header">
         <Link className="brand" href="/" aria-label="Bhraman Retreats home">
           <BrandLogo />

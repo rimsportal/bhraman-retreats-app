@@ -23,6 +23,7 @@ import { FounderStorySection } from "@/components/founder-story-section";
 import { RetreatMemories } from "@/components/retreat-memories";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { formatDateRange, getHomepageData, type MediaContent } from "@/lib/content";
+import { FaqPageSchema, RetreatEventSchema } from "@/lib/schema-org";
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +63,13 @@ export default async function Home() {
   const philosophyMedia = media.find((asset) => asset.url === mediaSlots["bg.philosophy"]);
   const philosophyImageUrl = mediaSlots["bg.philosophy"] ?? philosophyMedia?.url;
   const blogMedia = mediaIn(media, ["blog/why-choose-bhraman/cover"])[0];
+  const baseUrl = `${protocol}://${host}`;
 
   return (
     <main id="top">
       <ScrollReveal />
+      <FaqPageSchema />
+      <RetreatEventSchema baseUrl={baseUrl} />
 
       <CinematicHero
         founderName={founder?.name}
