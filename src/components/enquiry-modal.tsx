@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Compass, Loader2, Send, Sparkles, X } from "lucide-react";
 import { EditorialHeading, SectionLabel } from "@/components/design-system";
+import { COUNTRY_DIAL_CODES, WORLD_COUNTRIES } from "@/lib/country-data";
 
 type RetreatOption = {
   id: string;
@@ -22,6 +23,8 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
   const [retreats, setRetreats] = useState<RetreatOption[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("India");
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [selectedSlug, setSelectedSlug] = useState(defaultRetreatSlug || "");
   const [message, setMessage] = useState("");
@@ -79,12 +82,15 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
-      setError("Please fill in your name, email, and message.");
+      setError("Please fill in all required fields.");
       return;
     }
 
     setLoading(true);
     setError(null);
+
+    const fullPhone = phone.trim() ? `${countryCode} ${phone.trim()}` : "";
+    const enrichedMessage = country ? `[Origin: ${country}]\n\n${message.trim()}` : message.trim();
 
     try {
       const res = await fetch("/api/public/enquiries", {
@@ -93,9 +99,10 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
-          phone: phone.trim() || undefined,
+          phone: fullPhone || undefined,
+          country: country || undefined,
           retreatSlug: selectedSlug || undefined,
-          message: message.trim(),
+          message: enrichedMessage,
           source: "floating_fab_modal",
         }),
       });
@@ -117,6 +124,8 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
     setName("");
     setEmail("");
     setPhone("");
+    setCountry("India");
+    setCountryCode("+91");
     setMessage("");
     setSubmitted(false);
     setError(null);
@@ -128,45 +137,46 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
   return (
     <div
       className="enquiry-modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="enquiry-modal-title"
-      onClick={onClose}
     >
-      <div
-        className="enquiry-modal-card"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="enquiry-modal-card">
+        {/* Close Button */}
         <button
           type="button"
-          className="enquiry-modal-close"
           onClick={onClose}
+          className="enquiry-modal-close"
           aria-label="Close enquiry modal"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
         {submitted ? (
           <div className="enquiry-modal-success">
             <div className="success-icon-wrap">
-              <CheckCircle2 size={48} className="success-icon" />
+              <CheckCircle2 size={48} color="#7b3a34" />
             </div>
             <SectionLabel>ENQUIRY RECEIVED</SectionLabel>
-            <h3 id="enquiry-modal-title">Thank you, {name || "traveller"}.</h3>
-            <p>
-              Your note has been received with warmth. Dr. Pratiksha and our retreat circle will reach out to you within 24 hours to discuss dates, health notes, and preparations.
+            <EditorialHeading as="h3" style={{ fontSize: "28px", margin: "12px 0 16px" }}>
+              Your seat at the circle is noted.
+            </EditorialHeading>
+            <p style={{ color: "var(--color-text-muted, #9eb3a8)", fontSize: "15px", lineHeight: "1.7", maxWidth: "480px", margin: "0 auto 28px" }}>
+              Thank you for sharing your intentions, {name.trim()}. Dr. Pratiksha Shekhawat and the Bhraman team will review your application and reach out via email and WhatsApp.
             </p>
             <button
               type="button"
-              className="button button-dark"
               onClick={handleReset}
-              style={{ marginTop: "24px", minWidth: "180px" }}
+              className="button button-dark"
             >
-              Close
+              Close Window
             </button>
           </div>
         ) : (
-          <div className="enquiry-modal-body">
+          <div>
             <div className="enquiry-modal-header">
               <SectionLabel>BEGIN YOUR JOURNEY</SectionLabel>
               <h3 id="enquiry-modal-title" style={{ fontSize: "24px", margin: "6px 0 8px" }}>
@@ -180,6 +190,7 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
             {error && <div className="enquiry-modal-error">{error}</div>}
 
             <form onSubmit={handleSubmit} className="enquiry-modal-form">
+              {/* Row 1: Full Name & Email Address */}
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="modal-name">Full Name *</label>
@@ -187,7 +198,6 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
                     id="modal-name"
                     type="text"
                     required
-                    placeholder="e.g. Maya Sharma"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -199,23 +209,28 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
                     id="modal-email"
                     type="email"
                     required
-                    placeholder="maya@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
 
+              {/* Row 2: Country Name & Preferred Journey */}
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="modal-phone">Phone / WhatsApp</label>
-                  <input
-                    id="modal-phone"
-                    type="tel"
-                    placeholder="+91 98765 43210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
+                  <label htmlFor="modal-country">Country Name *</label>
+                  <select
+                    id="modal-country"
+                    required
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                  >
+                    {WORLD_COUNTRIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -240,13 +255,45 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
                 </div>
               </div>
 
+              {/* Row 3: Phone Number with Country Code Dropdown */}
+              <div className="form-group">
+                <label htmlFor="modal-phone">Phone / WhatsApp</label>
+                <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", gap: "10px" }}>
+                  <select
+                    id="modal-country-code"
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    style={{
+                      padding: "12px 10px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--color-border, #ded9ce)",
+                      fontSize: "13.5px",
+                      background: "#faf8f5",
+                      color: "#1d281f",
+                    }}
+                  >
+                    {COUNTRY_DIAL_CODES.map((item) => (
+                      <option key={`${item.code}-${item.dialCode}`} value={item.dialCode}>
+                        {item.dialCode} ({item.name})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    id="modal-phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Your Intentions or Questions */}
               <div className="form-group">
                 <label htmlFor="modal-message">Your Intentions or Questions *</label>
                 <textarea
                   id="modal-message"
                   required
                   rows={3}
-                  placeholder="Tell us what you hope to experience, any dietary requirements, or questions for Dr. Pratiksha..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                 />

@@ -66,7 +66,7 @@ const schemas = {
   },
   enquiries: {
     required: ["name", "email", "message"],
-    strings: ["retreatId", "retreatSlug", "name", "email", "phone", "message", "status", "source"],
+    strings: ["retreatId", "retreatSlug", "name", "email", "phone", "country", "message", "status", "source"],
   },
 };
 
