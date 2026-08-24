@@ -6,7 +6,16 @@ import { hasAdminRole } from "@/lib/admin-auth";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api-response";
 import { getMediaBlobProperties, isBlobConfigured } from "@/lib/azure-storage";
 
-const SITE_SLOTS = new Set(["retreat", "founder", "hero", "bg.upcoming-retreats", "bg.testimonials", "bg.philosophy"]);
+const SITE_SLOTS = new Set([
+  "retreat",
+  "founder",
+  "hero",
+  "bg.upcoming-retreats",
+  "bg.testimonials",
+  "bg.philosophy",
+  "bg.itinerary",
+  "bg.moments",
+]);
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!(await hasAdminRole(["CONTENT_EDITOR", "SUPER_ADMIN"]))) {
@@ -17,7 +26,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const body = await request.json().catch(() => ({}));
   const slot = typeof body.slot === "string" && body.slot ? body.slot : null;
   if (slot && !SITE_SLOTS.has(slot)) {
-    return apiError(422, "VALIDATION_ERROR", "slot must be retreat, founder, hero, bg.upcoming-retreats, bg.testimonials or bg.philosophy.");
+    return apiError(422, "VALIDATION_ERROR", "slot must be retreat, founder, hero, bg.upcoming-retreats, bg.testimonials, bg.philosophy, bg.itinerary or bg.moments.");
   }
 
   try {

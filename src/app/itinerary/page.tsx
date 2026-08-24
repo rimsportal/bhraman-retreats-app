@@ -28,7 +28,7 @@ async function origin() {
 
 export default async function ItineraryPage() {
   const currentOrigin = await origin();
-  const { retreat, content } = await getHomepageData(currentOrigin);
+  const { retreat, content, mediaSlots } = await getHomepageData(currentOrigin);
 
   const itineraryItems: ItineraryItem[] = (retreat?.itinerary || []).map((day) => ({
     day: `DAY 0${day.dayNumber}`,
@@ -57,7 +57,7 @@ export default async function ItineraryPage() {
         "Sunrise Jala (Water) breathwork and somatic fluid movement",
         "Silent meditative hike along mountain glacial streams",
         "Vocal toning and nervous system down-regulation workshop",
-        "Evening reflective tea gathering and sound bath",
+        "Evening reflective tea gathering and restorative sound bath",
       ],
     },
     {
@@ -66,8 +66,8 @@ export default async function ItineraryPage() {
       title: "Transform and kindle inner vitality",
       activities: [
         "Agni (Fire) solar yoga practice and core energy activation",
-        "Ancient Trātaka (candle flame gazing) concentration ritual",
         "Mindful nature immersion and Himalayan wisdom discourse",
+        "Ancient Trātaka (candle flame gazing) concentration ritual",
         "Sacred fire ceremony (Havan) to release mental burdens",
       ],
     },
@@ -97,7 +97,7 @@ export default async function ItineraryPage() {
 
   const itemsToRender = itineraryItems.length > 0 ? itineraryItems : fallbackItems;
 
-  const coverImage = content.itineraryCoverImage || retreat?.heroImageUrl || "/hero-himalayan-dawn.png";
+  const coverImage = mediaSlots["bg.itinerary"] || content.itineraryCoverImage || retreat?.heroImageUrl || "/hero-himalayan-dawn.png";
 
   return (
     <main className="itinerary-page">

@@ -83,7 +83,18 @@ export async function uploadMediaForReview(
   return readApi<ConfirmedMediaAsset>(confirmResponse);
 }
 
-export async function publishMediaAsset(assetId: string, slot?: "retreat" | "founder" | "hero" | "bg.upcoming-retreats" | "bg.testimonials" | "bg.philosophy") {
+export async function publishMediaAsset(
+  assetId: string,
+  slot?:
+    | "retreat"
+    | "founder"
+    | "hero"
+    | "bg.upcoming-retreats"
+    | "bg.testimonials"
+    | "bg.philosophy"
+    | "bg.itinerary"
+    | "bg.moments"
+) {
   const response = await fetch(`/api/admin/media/assets/${encodeURIComponent(assetId)}/publish`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

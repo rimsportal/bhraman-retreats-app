@@ -21,12 +21,19 @@ async function origin() {
 
 export default async function MomentsPage() {
   const currentOrigin = await origin();
-  const { content, completedRetreats, quotes } = await getHomepageData(currentOrigin);
+  const { content, completedRetreats, quotes, mediaSlots } = await getHomepageData(currentOrigin);
+
+  const coverImage = mediaSlots["bg.moments"] || content.momentsCoverImage || "/hero-himalayan-dawn.png";
 
   return (
     <main className="moments-page">
       {/* Hero Header */}
-      <section className="tv-hero">
+      <section
+        className="tv-hero"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(10,30,10,.75) 100%), url('${coverImage}')`,
+        }}
+      >
         <div className="tv-hero-overlay" />
         <div className="tv-hero-content">
           <SectionLabel>PREVIOUS RETREAT ARCHIVE</SectionLabel>

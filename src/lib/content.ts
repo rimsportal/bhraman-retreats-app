@@ -25,6 +25,7 @@ export type HomeContent = {
   itineraryIntro: string;
   itineraryNote: string;
   itineraryCoverImage?: string;
+  momentsCoverImage?: string;
   founderLabel: string;
   founderTitle: string;
   founderEmphasis: string;
@@ -253,6 +254,7 @@ export const defaultHomeContent: HomeContent = {
   itineraryIntro: "Every day honours one element through movement, traditional practice, conscious nourishment and reflection.",
   itineraryNote: "The complete time-by-time schedule becomes available after your place is confirmed.",
   itineraryCoverImage: "/hero-himalayan-dawn.png",
+  momentsCoverImage: "/hero-himalayan-dawn.png",
   founderLabel: "THE STORY BEHIND BHRAMAN",
   founderTitle: "Rooted in medicine.",
   founderEmphasis: "Guided by nature.",

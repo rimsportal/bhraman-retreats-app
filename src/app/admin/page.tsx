@@ -38,7 +38,16 @@ type RetreatContent = {
   slug: string; title: string; edition: string | null; summary: string; location: string;
   startDate: string; endDate: string; priceInPaise: number; capacity: number;
 };
-type Media = { retreat?: string; founder?: string; hero?: string; "bg.upcoming-retreats"?: string; "bg.testimonials"?: string; "bg.philosophy"?: string };
+type Media = {
+  retreat?: string;
+  founder?: string;
+  hero?: string;
+  "bg.upcoming-retreats"?: string;
+  "bg.testimonials"?: string;
+  "bg.philosophy"?: string;
+  "bg.itinerary"?: string;
+  "bg.moments"?: string;
+};
 type PendingMedia = { id: string; url: string };
 type Booking = {
   id: string; reference: string; guests: number; totalInPaise: number;
@@ -225,7 +234,7 @@ export default function AdminPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [media, setMedia] = useState<Media>({});
   const [philosophyParagraphs, setPhilosophyParagraphs] = useState<[string, string]>(["", ""]);
-  const [pendingMedia, setPendingMedia] = useState<Partial<Record<"retreat" | "founder" | "hero" | "bg.upcoming-retreats" | "bg.testimonials" | "bg.philosophy", PendingMedia>>>({});
+  const [pendingMedia, setPendingMedia] = useState<Partial<Record<"retreat" | "founder" | "hero" | "bg.upcoming-retreats" | "bg.testimonials" | "bg.philosophy" | "bg.itinerary" | "bg.moments", PendingMedia>>>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cropTarget, setCropTarget] = useState<{ file: File; testimonialIndex: number; imageUrl: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -290,12 +299,14 @@ export default function AdminPage() {
     flash(okMsg);
   }
 
-  type SlotType = "retreat" | "founder" | "hero" | "bg.upcoming-retreats" | "bg.testimonials" | "bg.philosophy";
+  type SlotType = "retreat" | "founder" | "hero" | "bg.upcoming-retreats" | "bg.testimonials" | "bg.philosophy" | "bg.itinerary" | "bg.moments";
 
   function mediaFolderFor(slot: SlotType) {
     if (slot === "bg.upcoming-retreats") return "images/background/upcoming-retreats";
     if (slot === "bg.testimonials") return "images/background/testimonials";
     if (slot === "bg.philosophy") return "images/background/philosophy";
+    if (slot === "bg.itinerary") return "images/background/itinerary";
+    if (slot === "bg.moments") return "images/background/moments";
     if (slot === "founder") return "founder/profile";
     if (slot === "hero") return "site/hero";
     if (retreat?.slug.includes("uttarakhand")) return "retreats/uttarakhand-december/cover";
@@ -316,6 +327,10 @@ export default function AdminPage() {
               ? "Guest voices background"
               : slot === "bg.philosophy"
               ? "Philosophy section image"
+              : slot === "bg.itinerary"
+              ? "Itinerary page background"
+              : slot === "bg.moments"
+              ? "Moments page background"
               : `${retreat?.title ?? "Bhraman retreat"} cover`;
       const asset = await uploadMediaForReview(file, {
         folder: mediaFolderFor(slot),
@@ -577,7 +592,9 @@ export default function AdminPage() {
               ["founder", "Founder portrait"],
               ["bg.philosophy", "Philosophy section image"],
               ["bg.upcoming-retreats", "Upcoming Retreats background"],
-              ["bg.testimonials", "Guest Voices background"]
+              ["bg.testimonials", "Guest Voices background"],
+              ["bg.itinerary", "Itinerary page background (/itinerary)"],
+              ["bg.moments", "Moments page background (/moments)"]
             ] as const).map(([slot, label]) => (
               <div className="admin-image-slot" key={slot}>
                 <h3>{label}</h3>
