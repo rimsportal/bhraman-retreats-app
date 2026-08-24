@@ -284,13 +284,6 @@ export default async function Home() {
         <p>{content.enquiryCopy}</p>
         <EnquiryForm retreatId={retreat?.id} />
       </section>
-
-      <footer className="site-footer">
-        <a className="brand footer-brand" href="#top"><BrandLogo tone="light" /></a>
-        <p>{content.footerTagline}</p>
-        <div><a href="#retreat">Retreats</a><a href="#itinerary">Itinerary</a><a href="#journal">Journal</a><a href="#enquiry">Contact</a></div>
-        <small>© 2026 Bhraman Retreats. All rights reserved.</small>
-      </footer>
     </main>
   );
 }
