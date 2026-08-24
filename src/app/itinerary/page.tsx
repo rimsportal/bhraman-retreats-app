@@ -97,10 +97,17 @@ export default async function ItineraryPage() {
 
   const itemsToRender = itineraryItems.length > 0 ? itineraryItems : fallbackItems;
 
+  const coverImage = content.itineraryCoverImage || retreat?.heroImageUrl || "/hero-himalayan-dawn.png";
+
   return (
     <main className="itinerary-page">
       {/* Hero Header */}
-      <section className="tv-hero">
+      <section
+        className="tv-hero"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(10,30,10,.75) 100%), url('${coverImage}')`,
+        }}
+      >
         <div className="tv-hero-overlay" />
         <div className="tv-hero-content">
           <SectionLabel>THE FIVE-DAY JOURNEY</SectionLabel>

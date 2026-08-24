@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -8,11 +8,14 @@ import {
   ChevronUp,
   Clock,
   Compass,
+  Image as ImageIcon,
   Loader2,
   Plus,
   RotateCcw,
   Sparkles,
   Trash2,
+  Upload,
+  UploadCloud,
 } from "lucide-react";
 
 type Activity = {
@@ -53,6 +56,7 @@ type ItineraryContentSettings = {
   itineraryEmphasis: string;
   itineraryIntro: string;
   itineraryNote: string;
+  itineraryCoverImage?: string;
 };
 
 const ELEMENTS = ["EARTH", "WATER", "FIRE", "AIR", "SPACE"] as const;
@@ -65,7 +69,14 @@ const DEFAULT_SETTINGS: ItineraryContentSettings = {
     "Every day honours one element through movement, traditional practice, conscious nourishment and reflection.",
   itineraryNote:
     "The complete time-by-time schedule becomes available after your place is confirmed.",
+  itineraryCoverImage: "/hero-himalayan-dawn.png",
 };
+
+const HIMALAYAN_COVER_PRESETS = [
+  { label: "Himalayan Golden Dawn", url: "/hero-himalayan-dawn.png" },
+  { label: "Lamayuru Monastery Yoga", url: "/hero-yoga-lamayuru.jpg" },
+  { label: "Ancient Monastery Morning", url: "/monastery-morning.png" },
+];
 
 const DEFAULT_DAYS_TEMPLATE: ItineraryDay[] = [
   {
@@ -141,20 +152,20 @@ const DEFAULT_DAYS_TEMPLATE: ItineraryDay[] = [
     dayNumber: 4,
     element: "AIR",
     title: "Expand awareness and invite lightness",
-    description: "Open the lungs with prāṇāyāma and experience high-altitude expansive stillness.",
+    description: "Open the breath and let lightness clear old mental habits and physical fatigue.",
     publicationStatus: "PUBLISHED",
     sections: [
       {
         title: "Morning",
         activities: [
-          { startTime: "06:00 AM", title: "Morning Vāyu (Air) prāṇāyāma atop the moonland ridge" },
-          { startTime: "09:00 AM", title: "Monastery prayer chant observation and spiritual reflection" },
+          { startTime: "06:30 AM", title: "Morning Vāyu (Air) prāṇāyāma atop the moonland ridge" },
+          { startTime: "10:00 AM", title: "Monastery prayer chant observation and spiritual reflection" },
         ],
       },
       {
         title: "Evening",
         activities: [
-          { startTime: "04:30 PM", title: "Spacious creative journaling and restorative bodywork" },
+          { startTime: "05:00 PM", title: "Spacious creative journaling and restorative bodywork" },
           { startTime: "07:30 PM", title: "Community storytelling circle with warm herbal chai" },
         ],
       },
@@ -164,15 +175,21 @@ const DEFAULT_DAYS_TEMPLATE: ItineraryDay[] = [
     dayNumber: 5,
     element: "SPACE",
     title: "Integrate, observe and carry home",
-    description: "Deep resting meditation and carrying the quiet mountain presence back into the world.",
+    description: "Anchor the silence and clarity into everyday life before returning home.",
     publicationStatus: "PUBLISHED",
     sections: [
       {
         title: "Morning",
         activities: [
-          { startTime: "06:30 AM", title: "Dawn Ākāśa (Space) silent meditation overlooking the valley" },
+          { startTime: "06:00 AM", title: "Dawn Ākāśa (Space) silent meditation overlooking the valley" },
           { startTime: "08:30 AM", title: "Closing gratitude ceremony and intention integration" },
+        ],
+      },
+      {
+        title: "Farewell",
+        activities: [
           { startTime: "10:00 AM", title: "Shared farewell breakfast and personal takeaway journals" },
+          { startTime: "12:00 PM", title: "Departure with renewed clarity and inner silence" },
         ],
       },
     ],
@@ -186,9 +203,11 @@ export function ItineraryManager() {
   const [settings, setSettings] = useState<ItineraryContentSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -230,6 +249,7 @@ export function ItineraryManager() {
             itineraryEmphasis: content.itineraryEmphasis || DEFAULT_SETTINGS.itineraryEmphasis,
             itineraryIntro: content.itineraryIntro || DEFAULT_SETTINGS.itineraryIntro,
             itineraryNote: content.itineraryNote || DEFAULT_SETTINGS.itineraryNote,
+            itineraryCoverImage: content.itineraryCoverImage || DEFAULT_SETTINGS.itineraryCoverImage,
           });
         }
       } catch (err) {
@@ -293,6 +313,37 @@ export function ItineraryManager() {
 
     loadRetreatItinerary();
   }, [selectedRetreatId]);
+
+  // Handle Cover Photo Upload
+  const handleCoverUpload = async (file: File) => {
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slot", "itinerary");
+      formData.append("altText", "Itinerary Cover Image");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to upload cover image");
+      }
+      const data = await res.json();
+      if (data.url) {
+        setSettings((prev) => ({ ...prev, itineraryCoverImage: data.url }));
+        flash("✓ Itinerary cover photo uploaded successfully. Click Save to publish.");
+      }
+    } catch (err: any) {
+      alert("Cover image upload failed: " + (err.message || "Please try again."));
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   // Day handlers
   const handleAddDay = () => {
@@ -358,11 +409,22 @@ export function ItineraryManager() {
     });
   };
 
+  const handleUpdateSectionTitle = (dayIndex: number, sectionIndex: number, title: string) => {
+    setDays((prev) => {
+      const next = [...prev];
+      const sections = [...next[dayIndex].sections];
+      sections[sectionIndex] = { ...sections[sectionIndex], title };
+      next[dayIndex] = { ...next[dayIndex], sections };
+      return next;
+    });
+  };
+
   const handleAddActivity = (dayIndex: number, sectionIndex: number) => {
     setDays((prev) => {
       const next = [...prev];
       const sections = [...next[dayIndex].sections];
-      const activities = [...sections[sectionIndex].activities, { startTime: "", title: "" }];
+      const activities = [...sections[sectionIndex].activities];
+      activities.push({ startTime: "10:00 AM", title: "New activity" });
       sections[sectionIndex] = { ...sections[sectionIndex], activities };
       next[dayIndex] = { ...next[dayIndex], sections };
       return next;
@@ -462,7 +524,7 @@ export function ItineraryManager() {
         console.warn("Could not persist home.content itinerary settings directly");
       }
 
-      flash("Itinerary rhythm and daily elemental sessions successfully saved and published!");
+      flash("Itinerary rhythm, cover photo, and daily elemental sessions successfully saved and published!");
     } catch (err: any) {
       setError(err.message || "Failed to save itinerary.");
     } finally {
@@ -495,21 +557,26 @@ export function ItineraryManager() {
         <div>
           <h2>Retreat Itinerary &amp; Daily Rhythm</h2>
           <p className="admin-note">
-            Control the 5-day elemental schedule, daily practices, schedule notes, and titles displayed on <code>/itinerary</code> and the homepage.
+            Control the 5-day elemental schedule, daily practices, cover photography, and copy displayed on <code>/itinerary</code> and the homepage.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+
+        <div className="admin-retreats-actions">
           <button
             type="button"
+            className="button button-secondary"
             onClick={handleResetToTemplate}
-            className="button"
-            style={{ background: "#f0f4ee", border: "1px solid #ccd6c8", color: "#223024" }}
-            title="Reset to 5-day elemental template"
+            disabled={saving}
           >
-            <RotateCcw size={14} /> Template
+            <RotateCcw size={14} /> Reset Template
           </button>
-          <button type="submit" className="button button-dark" disabled={saving}>
-            {saving ? "Saving…" : "Save Itinerary"}
+          <button
+            type="submit"
+            className="button button-dark"
+            disabled={saving}
+          >
+            {saving ? <Loader2 className="spin" size={14} /> : <Check size={14} />}
+            <span>{saving ? "Saving Changes..." : "Save & Publish Itinerary"}</span>
           </button>
         </div>
       </div>
@@ -518,20 +585,20 @@ export function ItineraryManager() {
       {error && <p className="form-error" role="alert">{error}</p>}
 
       {/* ── SECTION 1: TARGET RETREAT SELECTOR ── */}
-      <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
-        <h3 style={{ margin: "0 0 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
-          <Compass size={18} color="#7b3a34" /> 1. Target Retreat
+      <div style={{ background: "#fbfcf9", padding: "20px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "24px" }}>
+        <h3 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", color: "#1d281f" }}>
+          <Compass size={18} color="#7b3a34" /> 1. Select Retreat Edition
         </h3>
         <label>
-          Selected Retreat
+          Retreat to link this Itinerary to:
           <select
             value={selectedRetreatId}
             onChange={(e) => setSelectedRetreatId(e.target.value)}
-            style={{ width: "100%", marginTop: "6px" }}
+            style={{ width: "100%", padding: "10px 14px", marginTop: "6px" }}
           >
             {retreats.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.title} ({r.edition || r.slug}) [{r.status}]
+                {r.title} ({r.edition || r.slug}) · {r.status}
               </option>
             ))}
           </select>
@@ -541,10 +608,132 @@ export function ItineraryManager() {
         </p>
       </div>
 
-      {/* ── SECTION 2: GLOBAL ITINERARY HEADINGS & COPY ── */}
+      {/* ── SECTION 2: ITINERARY HERO COVER PAGE STUDIO ── */}
       <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
         <h3 style={{ margin: "0 0 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
-          <Sparkles size={18} color="#7b3a34" /> 2. Section Headings &amp; Intro Copy
+          <ImageIcon size={18} color="#7b3a34" /> 2. Itinerary Hero Cover Page Photography
+        </h3>
+
+        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "24px", alignItems: "center" }}>
+          {/* 16:9 Live Preview Canvas */}
+          <div
+            style={{
+              width: "100%",
+              aspectRatio: "16/10",
+              borderRadius: "10px",
+              overflow: "hidden",
+              background: "#111",
+              border: "1px solid #ded9ce",
+              position: "relative",
+              cursor: "pointer",
+            }}
+            onClick={() => coverFileInputRef.current?.click()}
+            title="Click to upload new cover image"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={settings.itineraryCoverImage || "/hero-himalayan-dawn.png"}
+              alt="Itinerary Cover"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.4)",
+                opacity: 0,
+                transition: "opacity 0.2s ease",
+                display: "grid",
+                placeItems: "center",
+                color: "#fff",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "0";
+              }}
+            >
+              <Upload size={16} /> Click to Upload Cover
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "#1d281f", display: "block", marginBottom: "4px" }}>
+                Hero Cover Image URL (Displayed at top of <code>/itinerary</code>)
+              </span>
+              <input
+                type="text"
+                value={settings.itineraryCoverImage || ""}
+                onChange={(e) => setSettings({ ...settings, itineraryCoverImage: e.target.value })}
+                placeholder="/hero-himalayan-dawn.png or https://..."
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #ded9ce" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <input
+                type="file"
+                ref={coverFileInputRef}
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleCoverUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                className="button button-dark"
+                onClick={() => coverFileInputRef.current?.click()}
+                disabled={uploadingCover}
+                style={{ fontSize: "12px", padding: "8px 16px" }}
+              >
+                {uploadingCover ? (
+                  <>
+                    <Loader2 size={13} className="spin" /> Uploading to Cloud…
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud size={14} /> Upload New Cover Photo
+                  </>
+                )}
+              </button>
+
+              <span style={{ fontSize: "11px", color: "#8a8178", fontWeight: 600 }}>OR SELECT PRESET:</span>
+              {HIMALAYAN_COVER_PRESETS.map((preset) => (
+                <button
+                  key={preset.url}
+                  type="button"
+                  onClick={() => setSettings({ ...settings, itineraryCoverImage: preset.url })}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: "999px",
+                    border: "1px solid",
+                    borderColor: settings.itineraryCoverImage === preset.url ? "#7b3a34" : "#ded9ce",
+                    background: settings.itineraryCoverImage === preset.url ? "#7b3a34" : "#ffffff",
+                    color: settings.itineraryCoverImage === preset.url ? "#ffffff" : "#1d281f",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECTION 3: GLOBAL ITINERARY HEADINGS & COPY ── */}
+      <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
+        <h3 style={{ margin: "0 0 16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
+          <Sparkles size={18} color="#7b3a34" /> 3. Section Headings &amp; Intro Copy
         </h3>
 
         <div className="admin-grid">
@@ -599,11 +788,11 @@ export function ItineraryManager() {
         </div>
       </div>
 
-      {/* ── SECTION 3: DAILY ELEMENTAL SCHEDULE ── */}
+      {/* ── SECTION 4: DAILY ELEMENTAL SCHEDULE ── */}
       <div style={{ background: "#fbfcf9", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8de", marginBottom: "32px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", color: "#1d281f" }}>
-            <CalendarDays size={18} color="#7b3a34" /> 3. Daily Elemental Schedule ({days.length} Days)
+            <CalendarDays size={18} color="#7b3a34" /> 4. Daily Elemental Schedule ({days.length} Days)
           </h3>
           <button
             type="button"
@@ -669,22 +858,27 @@ export function ItineraryManager() {
                         e.stopPropagation();
                         handleRemoveDay(dayIndex);
                       }}
-                      className="admin-delete"
-                      style={{ padding: "4px 8px", fontSize: "12px" }}
-                      title="Delete Day"
+                      title="Remove Day"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#c2410c",
+                        padding: "4px",
+                      }}
                     >
-                      <Trash2 size={13} /> Remove
+                      <Trash2 size={16} />
                     </button>
-                    {isExpanded ? <ChevronUp size={16} color="#666" /> : <ChevronDown size={16} color="#666" />}
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </div>
                 </div>
 
-                {/* Day Details Drawer */}
+                {/* Day Expanded Form */}
                 {isExpanded && (
-                  <div style={{ padding: "20px" }}>
+                  <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
                     <div className="admin-grid">
                       <label>
-                        Element
+                        Element Pillar:
                         <select
                           value={day.element}
                           onChange={(e) => handleUpdateDay(dayIndex, "element", e.target.value)}
@@ -698,7 +892,7 @@ export function ItineraryManager() {
                       </label>
 
                       <label>
-                        Day Focus / Title
+                        Day Title (Theme):
                         <input
                           type="text"
                           value={day.title}
@@ -708,129 +902,105 @@ export function ItineraryManager() {
                       </label>
                     </div>
 
-                    <div style={{ marginTop: "16px" }}>
-                      <label>
-                        Day Summary &amp; Reflection Note
-                        <textarea
-                          rows={2}
-                          value={day.description || ""}
-                          onChange={(e) => handleUpdateDay(dayIndex, "description", e.target.value)}
-                          placeholder="Brief summary of the day's intention and practices..."
-                        />
-                      </label>
-                    </div>
+                    <label>
+                      Day Description / Intention:
+                      <textarea
+                        rows={2}
+                        value={day.description || ""}
+                        onChange={(e) => handleUpdateDay(dayIndex, "description", e.target.value)}
+                        placeholder="Brief summary of the day's focus..."
+                      />
+                    </label>
 
-                    {/* Timeline Sessions Block */}
-                    <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid #e8ede6" }}>
+                    {/* Sections & Activities in Day */}
+                    <div style={{ marginTop: "12px", borderTop: "1px dashed #e2e8de", paddingTop: "16px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                        <h4 style={{ margin: 0, fontSize: "14px", color: "#7b3a34", fontWeight: 600 }}>
-                          Timeline Sessions &amp; Practices
-                        </h4>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#1d281f" }}>
+                          Sessions / Time Blocks:
+                        </span>
                         <button
                           type="button"
+                          className="button button-secondary"
                           onClick={() => handleAddSection(dayIndex)}
-                          className="admin-add"
-                          style={{ fontSize: "12px", padding: "4px 10px" }}
+                          style={{ fontSize: "11px", padding: "4px 10px" }}
                         >
-                          <Plus size={13} /> Add Session Block
+                          <Plus size={12} /> Add Session Block
                         </button>
                       </div>
 
-                      {day.sections.map((section, sIdx) => (
-                        <div
-                          key={sIdx}
-                          style={{
-                            background: "#fbfcf9",
-                            border: "1px solid #e2e8de",
-                            borderRadius: "6px",
-                            padding: "14px",
-                            marginBottom: "12px",
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                            <input
-                              type="text"
-                              value={section.title}
-                              onChange={(e) => {
-                                const next = [...days];
-                                next[dayIndex].sections[sIdx].title = e.target.value;
-                                setDays(next);
-                              }}
-                              placeholder="Session Name (e.g. Morning Practice)"
-                              style={{ width: "240px", fontWeight: 600, fontSize: "13px" }}
-                            />
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        {(day.sections || []).map((section, sIdx) => (
+                          <div
+                            key={sIdx}
+                            style={{
+                              background: "#fbfcf9",
+                              border: "1px solid #e2e8de",
+                              borderRadius: "6px",
+                              padding: "14px",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                              <input
+                                type="text"
+                                value={section.title}
+                                onChange={(e) => handleUpdateSectionTitle(dayIndex, sIdx, e.target.value)}
+                                placeholder="Session Title (e.g. Morning, Afternoon, Evening)"
+                                style={{ fontWeight: 600, fontSize: "13px", width: "60%" }}
+                              />
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <button
+                                  type="button"
+                                  className="button button-secondary"
+                                  onClick={() => handleAddActivity(dayIndex, sIdx)}
+                                  style={{ fontSize: "11px", padding: "4px 8px" }}
+                                >
+                                  <Plus size={11} /> Add Activity
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSection(dayIndex, sIdx)}
+                                  style={{ background: "none", border: "none", color: "#c2410c", cursor: "pointer" }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSection(dayIndex, sIdx)}
-                              className="admin-delete"
-                              style={{ padding: "3px 8px", fontSize: "11px" }}
-                            >
-                              Remove Block
-                            </button>
-                          </div>
-
-                          {/* Activities List */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                            {section.activities.map((act, aIdx) => (
-                              <div key={aIdx} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                                <div style={{ width: "110px", display: "flex", alignItems: "center", gap: "4px" }}>
-                                  <Clock size={13} color="#7b3a34" />
+                            {/* Activities list */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              {(section.activities || []).map((act, aIdx) => (
+                                <div key={aIdx} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                                   <input
                                     type="text"
                                     value={act.startTime || ""}
                                     onChange={(e) =>
                                       handleUpdateActivity(dayIndex, sIdx, aIdx, "startTime", e.target.value)
                                     }
-                                    placeholder="06:30 AM"
-                                    style={{ width: "100%", fontSize: "12px", padding: "6px 8px" }}
+                                    placeholder="07:00 AM"
+                                    style={{ width: "100px", fontSize: "12px", padding: "6px 8px" }}
                                   />
+                                  <input
+                                    type="text"
+                                    value={act.title}
+                                    onChange={(e) =>
+                                      handleUpdateActivity(dayIndex, sIdx, aIdx, "title", e.target.value)
+                                    }
+                                    placeholder="Activity description (e.g. Morning prāṇāyāma on ridge)"
+                                    style={{ flex: 1, fontSize: "12px", padding: "6px 8px" }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveActivity(dayIndex, sIdx, aIdx)}
+                                    style={{ background: "none", border: "none", color: "#8a9686", cursor: "pointer" }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
                                 </div>
-
-                                <input
-                                  type="text"
-                                  value={act.title}
-                                  onChange={(e) =>
-                                    handleUpdateActivity(dayIndex, sIdx, aIdx, "title", e.target.value)
-                                  }
-                                  placeholder="Activity description (e.g. Jala breathwork on terrace)"
-                                  style={{ flex: 1, fontSize: "13px", padding: "6px 10px" }}
-                                />
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveActivity(dayIndex, sIdx, aIdx)}
-                                  className="admin-delete"
-                                  style={{ padding: "4px" }}
-                                  title="Delete Activity"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                            ))}
-
-                            <button
-                              type="button"
-                              onClick={() => handleAddActivity(dayIndex, sIdx)}
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                color: "#7b3a34",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                marginTop: "6px",
-                                alignSelf: "flex-start",
-                              }}
-                            >
-                              <Plus size={13} /> Add Activity Item
-                            </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -840,9 +1010,16 @@ export function ItineraryManager() {
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button type="submit" className="button button-dark" disabled={saving}>
-          {saving ? "Saving…" : "Save Itinerary"}
+      {/* Footer Save Button */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #ded9ce", paddingTop: "20px" }}>
+        <button
+          type="submit"
+          className="button button-dark"
+          disabled={saving}
+          style={{ padding: "12px 28px" }}
+        >
+          {saving ? <Loader2 className="spin" size={16} /> : <Check size={16} />}
+          <span>{saving ? "Saving Changes..." : "Save & Publish All Itinerary Changes"}</span>
         </button>
       </div>
     </form>
