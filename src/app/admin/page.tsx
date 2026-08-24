@@ -19,6 +19,10 @@ const ItineraryManager = dynamic(
   () => import("@/components/admin/itinerary-manager").then((mod) => mod.ItineraryManager),
   { ssr: false }
 );
+const EnquiriesManager = dynamic(
+  () => import("@/components/admin/enquiries-manager").then((mod) => mod.EnquiriesManager),
+  { ssr: false }
+);
 
 type Testimonial = { name: string; location: string; imageUrl: string; quote: string };
 type Video = { title: string; url: string };
@@ -34,7 +38,7 @@ type Booking = {
   createdAt: string; user: { name: string | null; email: string; phone: string | null };
 };
 
-const TABS = ["Content", "Retreats", "Itinerary", "Founder Story", "Testimonials", "Videos", "Images", "Bookings"] as const;
+const TABS = ["Content", "Enquiries", "Retreats", "Itinerary", "Founder Story", "Testimonials", "Videos", "Images", "Bookings"] as const;
 const inr = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN")}`;
 
 function youtubeEmbedUrl(url: string): string {
@@ -426,6 +430,7 @@ export default function AdminPage() {
         </form>
       )}
 
+      {tab === "Enquiries" && <EnquiriesManager />}
       {tab === "Retreats" && <RetreatsManager />}
       {tab === "Itinerary" && <ItineraryManager />}
       {tab === "Founder Story" && <FounderStoryManager />}

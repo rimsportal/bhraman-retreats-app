@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { NavigationWrapper } from "@/components/navigation-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
+import { FloatingEnquiryFab } from "@/components/floating-enquiry-fab";
 
 export async function generateMetadata(): Promise<Metadata> {
   const incomingHeaders = await headers();
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider />
         <NavigationWrapper />
         {children}
+        <FloatingEnquiryFab />
       </body>
     </html>
   );
