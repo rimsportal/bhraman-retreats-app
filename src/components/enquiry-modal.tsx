@@ -256,8 +256,7 @@ export function EnquiryModal({ isOpen, onClose, defaultRetreatSlug }: EnquiryMod
                 <button
                   type="submit"
                   disabled={loading}
-                  className="button button-dark"
-                  style={{ width: "100%", justifyContent: "center" }}
+                  className="btn-enquiry-submit"
                 >
                   {loading ? (
                     <>

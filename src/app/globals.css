@@ -3374,12 +3374,12 @@ footer.site-footer > small {
 }
 
 /* ==========================================================================
-   ENQUIRY MODAL OVERLAY
+   ENQUIRY MODAL OVERLAY (Light Editorial Theme)
    ========================================================================== */
 .enquiry-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(8, 14, 10, 0.82);
+  background: rgba(18, 30, 22, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
@@ -3405,12 +3405,13 @@ footer.site-footer > small {
   max-width: 580px;
   max-height: 90vh;
   overflow-y: auto;
-  background: #131d17;
-  border: 1px solid rgba(198, 155, 73, 0.25);
+  background: #fbfbf9;
+  border: 1px solid #e2e8de;
   border-radius: 20px;
   padding: clamp(24px, 4vw, 36px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(198, 155, 73, 0.15);
+  box-shadow: 0 24px 60px rgba(10, 20, 14, 0.22), 0 4px 16px rgba(0, 0, 0, 0.06);
   animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #1d281f;
 }
 
 @keyframes modalSlideUp {
@@ -3428,28 +3429,42 @@ footer.site-footer > small {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #eef2eb;
+  border: 1px solid #dbe2d8;
   border-radius: 50%;
   width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9eb3a8;
+  color: #4a5c4e;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .enquiry-modal-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: #e0e8dc;
+  color: #1d281f;
   transform: rotate(90deg);
 }
 
 .enquiry-modal-header {
   margin-bottom: 20px;
   padding-right: 32px;
+}
+
+.enquiry-modal-header h3 {
+  font: 400 clamp(24px, 3.2vw, 30px)/1.15 var(--font-display, Georgia, serif);
+  color: #1d281f;
+  letter-spacing: -0.02em;
+  margin: 6px 0 8px;
+}
+
+.enquiry-modal-header p {
+  font-size: 14px;
+  color: #556658;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .enquiry-modal-form {
@@ -3477,41 +3492,77 @@ footer.site-footer > small {
 }
 
 .enquiry-modal-form label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9eb3a8;
+  letter-spacing: 0.08em;
+  color: #4a5c4e;
 }
 
 .enquiry-modal-form input,
 .enquiry-modal-form select,
 .enquiry-modal-form textarea {
   width: 100%;
-  padding: 11px 14px;
-  background: #0a110d;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #ccd6c8;
   border-radius: 8px;
-  color: #fff;
+  color: #1d281f;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.enquiry-modal-form input::placeholder,
+.enquiry-modal-form textarea::placeholder {
+  color: #8fa092;
 }
 
 .enquiry-modal-form input:focus,
 .enquiry-modal-form select:focus,
 .enquiry-modal-form textarea:focus {
   outline: none;
-  border-color: var(--color-primary-light, #c69b49);
-  box-shadow: 0 0 0 3px rgba(198, 155, 73, 0.2);
+  border-color: #7b3a34;
+  box-shadow: 0 0 0 3px rgba(123, 58, 52, 0.12);
+}
+
+.enquiry-modal-actions .btn-enquiry-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: #7b3a34;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(123, 58, 52, 0.2);
+}
+
+.enquiry-modal-actions .btn-enquiry-submit:hover:not(:disabled) {
+  background: #622e29;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(123, 58, 52, 0.35);
+}
+
+.enquiry-modal-actions .btn-enquiry-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .enquiry-modal-error {
   padding: 10px 14px;
-  background: rgba(244, 67, 54, 0.15);
-  border: 1px solid #f44336;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
   border-radius: 8px;
-  color: #ef9a9a;
+  color: #721c24;
   font-size: 13px;
   margin-bottom: 16px;
 }
@@ -3525,8 +3576,8 @@ footer.site-footer > small {
   width: 72px;
   height: 72px;
   margin: 0 auto 16px;
-  background: rgba(198, 155, 73, 0.15);
-  border: 1px solid var(--color-primary-light, #c69b49);
+  background: #fdf3e7;
+  border: 1px solid #f2cfab;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -3534,17 +3585,17 @@ footer.site-footer > small {
 }
 
 .enquiry-modal-success .success-icon {
-  color: var(--color-primary-light, #c69b49);
+  color: #7b3a34;
 }
 
 .enquiry-modal-success h3 {
-  font-size: 26px;
-  color: #fff;
+  font: 400 28px/1.2 var(--font-display, Georgia, serif);
+  color: #1d281f;
   margin: 8px 0 12px;
 }
 
 .enquiry-modal-success p {
-  color: #9eb3a8;
+  color: #556658;
   font-size: 15px;
   line-height: 1.6;
   max-width: 440px;
