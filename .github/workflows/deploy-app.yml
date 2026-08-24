@@ -23,9 +23,44 @@ env:
   ACR_NAME: acrbhrretcin
 
 jobs:
-  # ── GROUP 1: DATABASE MIGRATIONS (Runs in parallel with Container Build) ──
+  # ── STAGE 1: BUILD & PUSH CONTAINER (GHA Layer Cached) ──
+  # Guarantees the build & code compile 100% successfully BEFORE touching the database.
+  build-and-push-image:
+    name: "1. Build & Push Container (GHA Cached)"
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name "$ACR_NAME"
+
+      - name: Build and push container image with GHA cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:${{ github.sha }}
+            ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── STAGE 2: DATABASE MIGRATION (Only runs after Build succeeds) ──
   migrate-database:
-    name: "1. Apply Database Migrations"
+    name: "2. Apply Database Migrations"
+    needs: [build-and-push-image]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'dev' }}
     steps:
@@ -73,43 +108,10 @@ jobs:
           trap 'fw delete --yes >/dev/null 2>&1 || true' EXIT
           pnpm prisma migrate deploy
 
-  # ── GROUP 2: CONTAINER BUILD & PUSH (Parallel with GHA Layer Caching) ──
-  build-and-push-image:
-    name: "2. Build & Push Container (GHA Cached)"
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'dev' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-
-      - name: Log in to Azure Container Registry
-        run: az acr login --name "$ACR_NAME"
-
-      - name: Build and push container image with GHA cache
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:${{ github.sha }}
-            ${{ env.ACR_NAME }}.azurecr.io/bhraman-retreats:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # ── GROUP 3: APP SERVICE RESTART (Executes immediately when ready) ──
+  # ── STAGE 3: RESTART APP SERVICE (Only after Build & Migrations succeed) ──
   deploy-app:
     name: "3. Restart App Service"
-    needs: [migrate-database, build-and-push-image]
+    needs: [migrate-database]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'dev' }}
     steps:
@@ -126,4 +128,4 @@ jobs:
           RG="rg-bhr-ret-${ENVIRONMENT}-cin"
           APP="app-bhr-ret-${ENVIRONMENT}-cin"
           az webapp restart --name "$APP" --resource-group "$RG"
-          echo "Deployed ${ACR_NAME}.azurecr.io/bhraman-retreats:latest -> https://$APP.azurewebsites.net"
+          echo "Successfully deployed ${ACR_NAME}.azurecr.io/bhraman-retreats:latest -> https://$APP.azurewebsites.net"
