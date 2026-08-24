@@ -34,9 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preload" as="image" href="/hero-himalayan-dawn.png" />
-      </head>
       <body>
         <ThemeProvider />
         <NavigationWrapper />
