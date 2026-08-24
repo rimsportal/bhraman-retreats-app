@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -22,6 +22,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { JournalPost, PREDEFINED_JOURNAL_POSTS } from "@/lib/journal-data";
@@ -51,6 +52,7 @@ export function JournalManager() {
   const [posts, setPosts] = useState<JournalPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
   const [message, setMessage] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function JournalManager() {
   // Edit / Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<Partial<JournalPost> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -182,6 +185,36 @@ export function JournalManager() {
       ...editingPost,
       content: (editingPost.content || "") + "\n\n" + snippet,
     });
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slot", "journal");
+      formData.append("altText", editingPost?.title || "Journal cover");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to upload image");
+      }
+      const data = await res.json();
+      if (data.url) {
+        setEditingPost((prev) => (prev ? { ...prev, coverImageUrl: data.url } : prev));
+        flash("✓ Cover image uploaded and attached.");
+      }
+    } catch (err: any) {
+      alert("Image upload failed: " + (err.message || "Please try again."));
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   const handleSaveModalPost = async () => {
@@ -799,370 +832,284 @@ export function JournalManager() {
         </form>
       )}
 
-      {/* ── LUXURY REDESIGNED ESSAY MODAL ── */}
+      {/* ── SENIOR LUXURY EDITORIAL STUDIO MODAL ── */}
       {isModalOpen && editingPost && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            backgroundColor: "rgba(18, 26, 20, 0.65)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "16px",
-              width: "min(880px, 100%)",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              padding: "36px",
-              boxShadow: "0 25px 60px -10px rgba(0,0,0,0.3)",
-              border: "1px solid #ded9ce",
-              display: "flex",
-              flexDirection: "column",
-              gap: "22px",
-            }}
-          >
+        <div className="journal-modal-overlay">
+          <div className="journal-modal-card">
             {/* Modal Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #ded9ce", paddingBottom: "18px" }}>
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: "24px", color: "#1d281f", fontFamily: "Georgia, serif", fontWeight: 600 }}>
-                  {editingPost.id?.startsWith("custom-") ? "Write New Journal Essay" : "Edit Journal Essay"}
-                </h3>
-                <span style={{ fontSize: "13px", color: "#667768" }}>
-                  Compose an authentic Himalayan reflection authored by Dr. Pratiksha Shekhawat.
-                </span>
+            <div className="journal-modal-header">
+              <div className="journal-modal-header-text">
+                <h3>{editingPost.id?.startsWith("custom-") ? "Write New Journal Essay" : "Edit Journal Essay"}</h3>
+                <p>Curating authentic Himalayan reflections authored by Dr. Pratiksha Shekhawat.</p>
               </div>
               <button
                 type="button"
+                className="journal-modal-close-btn"
                 onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "#f5f2eb",
-                  border: "1px solid #ded9ce",
-                  borderRadius: "50%",
-                  width: "34px",
-                  height: "34px",
-                  display: "grid",
-                  placeItems: "center",
-                  cursor: "pointer",
-                  color: "#1d281f",
-                }}
+                aria-label="Close modal"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* 1. Essay Title */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                Essay Title (Headline) *
-              </label>
-              <input
-                type="text"
-                value={editingPost.title || ""}
-                onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                placeholder="e.g. The Medicine of Stillness: Returning to the Five Elements in Ladakh"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  border: "1px solid #ded9ce",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  background: "#faf8f5",
-                  fontWeight: 500,
-                  color: "#1d281f",
-                }}
-              />
-            </div>
-
-            {/* 2. URL Slug & Author Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                  URL Slug
-                </label>
+            {/* Modal Scrollable Body */}
+            <div className="journal-modal-body">
+              {/* 1. Essay Title */}
+              <div className="journal-field-group">
+                <div className="journal-field-label">
+                  <span>Story Title / Headline *</span>
+                  <span className="journal-field-hint">Featured across magazine grid and article header</span>
+                </div>
                 <input
                   type="text"
-                  value={editingPost.slug || ""}
-                  onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
-                  placeholder="leave blank to auto-generate from title"
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #ded9ce",
-                    borderRadius: "8px",
-                    fontSize: "13.5px",
-                    background: "#faf8f5",
-                    color: "#1d281f",
-                  }}
+                  className="journal-field-input"
+                  value={editingPost.title || ""}
+                  onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                  placeholder="e.g. The Medicine of Stillness: Returning to the Five Elements in Ladakh"
                 />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                  Author Attribution
-                </label>
-                <input
-                  type="text"
-                  value={editingPost.authorName || "Dr. Pratiksha Shekhawat"}
-                  onChange={(e) => setEditingPost({ ...editingPost, authorName: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #ded9ce",
-                    borderRadius: "8px",
-                    fontSize: "13.5px",
-                    background: "#faf8f5",
-                    color: "#1d281f",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* 3. Category & Reading Time Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                  Category Tag
-                </label>
-                <input
-                  type="text"
-                  value={editingPost.category || "Elemental Medicine"}
-                  onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value })}
-                  placeholder="e.g. Elemental Medicine, High Altitude Nutrition"
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #ded9ce",
-                    borderRadius: "8px",
-                    fontSize: "13.5px",
-                    background: "#faf8f5",
-                    color: "#1d281f",
-                  }}
-                />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                  Estimated Reading Time
-                </label>
-                <input
-                  type="text"
-                  value={editingPost.readingTime || "6 min read"}
-                  onChange={(e) => setEditingPost({ ...editingPost, readingTime: e.target.value })}
-                  placeholder="6 min read"
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #ded9ce",
-                    borderRadius: "8px",
-                    fontSize: "13.5px",
-                    background: "#faf8f5",
-                    color: "#1d281f",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* 4. Cover Image with Live Photo Preview */}
-            <div
-              style={{
-                background: "#faf8f5",
-                border: "1px solid #ded9ce",
-                borderRadius: "10px",
-                padding: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34", margin: 0 }}>
-                  Cover Image URL
-                </label>
-                <span style={{ fontSize: "11px", color: "#667768" }}>Choose sample or enter custom URL</span>
-              </div>
-
-              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                {/* Live Preview Box */}
-                <div
-                  style={{
-                    width: "120px",
-                    height: "75px",
-                    borderRadius: "6px",
-                    overflow: "hidden",
-                    background: "#000",
-                    flexShrink: 0,
-                    border: "1px solid #ded9ce",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={editingPost.coverImageUrl || "/hero-yoga-lamayuru.jpg"}
-                    alt="Cover preview"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              {/* 2. Metadata Grid: Slug & Author */}
+              <div className="journal-field-grid-2">
+                <div className="journal-field-group">
+                  <div className="journal-field-label">
+                    <span>URL Slug</span>
+                    <span className="journal-field-hint">Auto-derived</span>
+                  </div>
+                  <input
+                    type="text"
+                    className="journal-field-input"
+                    value={editingPost.slug || ""}
+                    onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
+                    placeholder="e.g. medicine-of-stillness-ladakh"
                   />
                 </div>
 
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div className="journal-field-group">
+                  <div className="journal-field-label">
+                    <span>Author Attribution</span>
+                  </div>
                   <input
                     type="text"
-                    value={editingPost.coverImageUrl || ""}
-                    onChange={(e) => setEditingPost({ ...editingPost, coverImageUrl: e.target.value })}
-                    placeholder="/hero-yoga-lamayuru.jpg or https://..."
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      border: "1px solid #ded9ce",
-                      borderRadius: "8px",
-                      fontSize: "13.5px",
-                      background: "#ffffff",
-                    }}
+                    className="journal-field-input"
+                    value={editingPost.authorName || "Dr. Pratiksha Shekhawat"}
+                    onChange={(e) => setEditingPost({ ...editingPost, authorName: e.target.value })}
                   />
+                </div>
+              </div>
 
-                  {/* Preset Pills */}
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {HIMALAYAN_IMAGE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.url}
-                        type="button"
-                        onClick={() => setEditingPost({ ...editingPost, coverImageUrl: preset.url })}
-                        style={{
-                          padding: "4px 12px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          background: editingPost.coverImageUrl === preset.url ? "#7b3a34" : "#ffffff",
-                          color: editingPost.coverImageUrl === preset.url ? "#ffffff" : "#1d281f",
-                          border: "1px solid",
-                          borderColor: editingPost.coverImageUrl === preset.url ? "#7b3a34" : "#ded9ce",
-                          borderRadius: "999px",
-                          cursor: "pointer",
+              {/* 3. Metadata Grid: Category & Reading Time */}
+              <div className="journal-field-grid-2">
+                <div className="journal-field-group">
+                  <div className="journal-field-label">
+                    <span>Category / Topic Tag</span>
+                  </div>
+                  <input
+                    type="text"
+                    className="journal-field-input"
+                    value={editingPost.category || "Elemental Medicine"}
+                    onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value })}
+                    placeholder="e.g. Elemental Medicine, Mountain Nutrition"
+                  />
+                </div>
+
+                <div className="journal-field-group">
+                  <div className="journal-field-label">
+                    <span>Estimated Reading Time</span>
+                  </div>
+                  <input
+                    type="text"
+                    className="journal-field-input"
+                    value={editingPost.readingTime || "6 min read"}
+                    onChange={(e) => setEditingPost({ ...editingPost, readingTime: e.target.value })}
+                    placeholder="e.g. 6 min read"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Luxury Cover Studio with Direct Upload */}
+              <div className="journal-field-group">
+                <div className="journal-field-label">
+                  <span>Cover Photography Studio</span>
+                  <span className="journal-field-hint">Direct image upload or sample selection</span>
+                </div>
+
+                <div className="journal-cover-studio">
+                  {/* Visual 16:9 Canvas Preview */}
+                  <div className="journal-cover-canvas">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editingPost.coverImageUrl || "/hero-yoga-lamayuru.jpg"}
+                      alt="Cover Preview"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/hero-yoga-lamayuru.jpg";
+                      }}
+                    />
+                  </div>
+
+                  <div className="journal-cover-actions">
+                    <div className="journal-upload-button-row">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/jpeg,image/png,image/webp,image/avif"
+                        hidden
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file);
+                          e.target.value = "";
                         }}
+                      />
+                      <button
+                        type="button"
+                        className="journal-upload-btn"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingCover}
                       >
-                        {preset.label}
+                        {uploadingCover ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" /> Uploading to Cloud…
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={14} /> Upload Image from Device
+                          </>
+                        )}
                       </button>
-                    ))}
+                    </div>
+
+                    <div className="journal-presets-row">
+                      <span style={{ fontSize: "11px", color: "#8a8178", fontWeight: 600 }}>OR SELECT SAMPLE:</span>
+                      {HIMALAYAN_IMAGE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.url}
+                          type="button"
+                          className={`journal-preset-pill ${editingPost.coverImageUrl === preset.url ? "active" : ""}`}
+                          onClick={() => setEditingPost({ ...editingPost, coverImageUrl: preset.url })}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <input
+                      type="text"
+                      className="journal-field-input"
+                      style={{ fontSize: "12.5px", padding: "8px 12px" }}
+                      value={editingPost.coverImageUrl || ""}
+                      onChange={(e) => setEditingPost({ ...editingPost, coverImageUrl: e.target.value })}
+                      placeholder="Or paste external image URL..."
+                    />
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 5. Summary Excerpt */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                Summary / Excerpt (Shown on Homepage Card &amp; Google Search Snippet) *
-              </label>
-              <textarea
-                rows={3}
-                value={editingPost.excerpt || ""}
-                onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
-                placeholder="A short, evocative summary of the essay's core insight..."
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  border: "1px solid #ded9ce",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  background: "#faf8f5",
-                  lineHeight: "1.6",
-                }}
-              />
-            </div>
-
-            {/* 6. Article Body with Formatting Snippets */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34", margin: 0 }}>
-                  Article Body (HTML / Paragraphs) *
-                </label>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => handleInsertSnippet("<h2>New Section Heading</h2>\n<p>Add narrative text here...</p>")}
-                    style={{ padding: "3px 8px", fontSize: "10px", fontWeight: 600, border: "1px solid #ded9ce", background: "#f5f2eb", borderRadius: "4px", cursor: "pointer" }}
-                  >
-                    + Add &lt;h2&gt;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInsertSnippet("<blockquote>\"Add reflective quote or Sanskrit passage here...\"</blockquote>")}
-                    style={{ padding: "3px 8px", fontSize: "10px", fontWeight: 600, border: "1px solid #ded9ce", background: "#f5f2eb", borderRadius: "4px", cursor: "pointer" }}
-                  >
-                    + Add &lt;blockquote&gt;
-                  </button>
+              {/* 5. Summary Excerpt */}
+              <div className="journal-field-group">
+                <div className="journal-field-label">
+                  <span>Summary / Excerpt *</span>
+                  <span className="journal-field-hint">Rendered on Homepage Magazine Cards &amp; Google Search Snippets</span>
                 </div>
+                <textarea
+                  rows={3}
+                  className="journal-field-textarea"
+                  value={editingPost.excerpt || ""}
+                  onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
+                  placeholder="A short, evocative summary of the essay's core insight..."
+                />
               </div>
 
-              <textarea
-                rows={9}
-                value={editingPost.content || ""}
-                onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                placeholder="<p class='lead-paragraph'>Write opening reflection...</p><h2>Heading</h2><p>Body text...</p>"
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  border: "1px solid #ded9ce",
-                  borderRadius: "8px",
-                  fontFamily: "monospace",
-                  fontSize: "13px",
-                  background: "#faf8f5",
-                  lineHeight: "1.7",
-                }}
-              />
+              {/* 6. Article Body with Formatting Toolbar */}
+              <div className="journal-field-group">
+                <div className="journal-field-label">
+                  <span>Full Article Body (HTML / Formatted Content) *</span>
+                  <span className="journal-field-hint">Supports rich editorial typography</span>
+                </div>
+
+                <div className="journal-editor-toolbar">
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#7b3a34", marginRight: "4px" }}>
+                    QUICK FORMAT:
+                  </span>
+                  <button
+                    type="button"
+                    className="journal-toolbar-btn"
+                    onClick={() => handleInsertSnippet("<h2>Section Heading</h2>\n<p>Write section reflection here...</p>")}
+                  >
+                    + Heading &lt;h2&gt;
+                  </button>
+                  <button
+                    type="button"
+                    className="journal-toolbar-btn"
+                    onClick={() => handleInsertSnippet("<blockquote>\"Nature holds everything we need to heal. We only have to learn how to listen again.\"</blockquote>")}
+                  >
+                    + Pull Quote &lt;blockquote&gt;
+                  </button>
+                  <button
+                    type="button"
+                    className="journal-toolbar-btn"
+                    onClick={() => handleInsertSnippet("<p class=\"lead-paragraph\">Opening thematic paragraph...</p>")}
+                  >
+                    + Lead Paragraph
+                  </button>
+                  <button
+                    type="button"
+                    className="journal-toolbar-btn"
+                    onClick={() => handleInsertSnippet("<ul>\n  <li><strong>Point 1:</strong> Description...</li>\n  <li><strong>Point 2:</strong> Description...</li>\n</ul>")}
+                  >
+                    + Bullet List
+                  </button>
+                </div>
+
+                <textarea
+                  rows={10}
+                  className="journal-field-textarea journal-content-textarea"
+                  value={editingPost.content || ""}
+                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                  placeholder="<p class='lead-paragraph'>Opening reflection...</p><h2>Section Title</h2><p>Body narrative...</p>"
+                />
+              </div>
+
+              {/* 7. Publication Status Dropdown */}
+              <div className="journal-field-group">
+                <div className="journal-field-label">
+                  <span>Publication Status</span>
+                </div>
+                <select
+                  className="journal-field-select"
+                  value={editingPost.publicationStatus || "PUBLISHED"}
+                  onChange={(e) => setEditingPost({ ...editingPost, publicationStatus: e.target.value as any })}
+                >
+                  <option value="PUBLISHED">PUBLISHED (Live on website and featured in journal)</option>
+                  <option value="DRAFT">DRAFT (Saved privately, hidden from visitors)</option>
+                </select>
+              </div>
             </div>
 
-            {/* 7. Publication Status */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
-                Publication Status
-              </label>
-              <select
-                value={editingPost.publicationStatus || "PUBLISHED"}
-                onChange={(e) => setEditingPost({ ...editingPost, publicationStatus: e.target.value as any })}
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  border: "1px solid #ded9ce",
-                  borderRadius: "8px",
-                  background: "#ffffff",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#1d281f",
-                }}
-              >
-                <option value="PUBLISHED">PUBLISHED (Visible on website and homepage)</option>
-                <option value="DRAFT">DRAFT (Saved privately, hidden from readers)</option>
-              </select>
-            </div>
+            {/* Modal Footer Actions */}
+            <div className="journal-modal-footer">
+              <span style={{ fontSize: "12px", color: "#8a8178" }}>
+                Dr. Pratiksha Shekhawat Himalayan Journal
+              </span>
 
-            {/* Modal Actions */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #ded9ce", paddingTop: "18px" }}>
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => setIsModalOpen(false)}
-                disabled={busy}
-                style={{ padding: "10px 22px", fontSize: "12px" }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="button button-dark"
-                onClick={handleSaveModalPost}
-                disabled={busy}
-                style={{ padding: "10px 24px", fontSize: "12px" }}
-              >
-                {busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                <span>Save Essay</span>
-              </button>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <button
+                  type="button"
+                  className="journal-btn-cancel"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="journal-btn-save"
+                  onClick={handleSaveModalPost}
+                  disabled={busy || uploadingCover}
+                >
+                  {busy ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  <span>Save &amp; Update Essay</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
