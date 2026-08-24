@@ -14,6 +14,7 @@ import {
   LayoutTemplate,
   Loader2,
   Plus,
+  Quote,
   RotateCcw,
   Save,
   Search,
@@ -31,6 +32,12 @@ interface JournalSettings {
   blogTitle: string;
   blogIntro: string;
 }
+
+const HIMALAYAN_IMAGE_PRESETS = [
+  { label: "Lamayuru Yoga", url: "/hero-yoga-lamayuru.jpg" },
+  { label: "Himalayan Dawn", url: "/hero-himalayan-dawn.png" },
+  { label: "Monastery Morning", url: "/monastery-morning.png" },
+];
 
 export function JournalManager() {
   const [activeSubTab, setActiveSubTab] = useState<"stories" | "settings">("stories");
@@ -153,7 +160,7 @@ export function JournalManager() {
       slug: "",
       title: "",
       excerpt: "",
-      content: "<p>Write your reflective essay here...</p>",
+      content: `<p class="lead-paragraph">In the quiet heights of Ladakh, where the air is pure and silence reigns, healing begins naturally...</p>\n\n<h2>The Healing Elements</h2>\n<p>When we align our rhythm with nature, our mind and body restore their innate balance.</p>\n\n<blockquote>"Nature holds everything we need to heal. We only have to learn how to listen again."</blockquote>`,
       authorName: "Dr. Pratiksha Shekhawat",
       coverImageUrl: "/hero-yoga-lamayuru.jpg",
       readingTime: "6 min read",
@@ -167,6 +174,14 @@ export function JournalManager() {
   const handleOpenEditModal = (post: JournalPost) => {
     setEditingPost({ ...post });
     setIsModalOpen(true);
+  };
+
+  const handleInsertSnippet = (snippet: string) => {
+    if (!editingPost) return;
+    setEditingPost({
+      ...editingPost,
+      content: (editingPost.content || "") + "\n\n" + snippet,
+    });
   };
 
   const handleSaveModalPost = async () => {
@@ -272,26 +287,26 @@ export function JournalManager() {
   }
 
   return (
-    <div style={{ maxWidth: "980px", margin: "0 auto", display: "grid", gap: "28px" }}>
+    <div style={{ maxWidth: "980px", margin: "0 auto", display: "grid", gap: "24px" }}>
       {/* ── TOP CONTROL & STATS BAR ── */}
       <div
-        className="admin-card"
         style={{
           padding: "24px 32px",
           background: "#ffffff",
           border: "1px solid #ded9ce",
-          borderRadius: "8px",
+          borderRadius: "12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "20px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <BookOpen size={18} color="#7b3a34" />
-            <h2 style={{ margin: 0, fontSize: "22px", color: "#1d281f" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+            <BookOpen size={20} color="#7b3a34" />
+            <h2 style={{ margin: 0, fontSize: "22px", color: "#1d281f", fontWeight: 600 }}>
               Himalayan Journal &amp; Editorial
             </h2>
           </div>
@@ -301,7 +316,7 @@ export function JournalManager() {
         </div>
 
         {/* Master Homepage Visibility Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div>
           <button
             type="button"
             onClick={handleToggleHomepage}
@@ -310,16 +325,17 @@ export function JournalManager() {
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              padding: "10px 18px",
+              padding: "10px 20px",
               background: settings.showBlogSection ? "#e8f5e9" : "#f5f5f5",
-              border: `1px solid ${settings.showBlogSection ? "#81c784" : "#cccccc"}`,
+              border: `1.5px solid ${settings.showBlogSection ? "#81c784" : "#cccccc"}`,
               color: settings.showBlogSection ? "#1b5e20" : "#666666",
               borderRadius: "999px",
               fontWeight: 700,
               fontSize: "12px",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.06em",
               cursor: "pointer",
               transition: "all 0.2s ease",
+              boxShadow: settings.showBlogSection ? "0 2px 6px rgba(46,125,50,0.15)" : "none",
             }}
           >
             {settings.showBlogSection ? (
@@ -390,13 +406,21 @@ export function JournalManager() {
 
       {/* ── SUB-TAB 1: JOURNAL STORIES ── */}
       {activeSubTab === "stories" && (
-        <div className="admin-card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "8px" }}>
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #ded9ce",
+            borderRadius: "12px",
+            padding: "28px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "16px" }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: "20px", color: "#1d281f" }}>
+              <h3 style={{ margin: "0 0 4px", fontSize: "19px", color: "#1d281f", fontWeight: 600 }}>
                 Published &amp; Draft Essays
               </h3>
-              <p className="admin-note">
+              <p style={{ margin: 0, color: "#667768", fontSize: "13px" }}>
                 The first 3 published essays appear in the homepage magazine layout. All published essays are viewable at their permanent URL.
               </p>
             </div>
@@ -414,7 +438,7 @@ export function JournalManager() {
                 type="button"
                 className="button button-dark"
                 onClick={handleOpenAddModal}
-                style={{ fontSize: "12px", padding: "8px 16px" }}
+                style={{ fontSize: "12px", padding: "8px 18px" }}
               >
                 <Plus size={14} /> Write New Essay
               </button>
@@ -422,7 +446,7 @@ export function JournalManager() {
           </div>
 
           {/* Filter & Search Toolbar */}
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", margin: "16px 0" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", margin: "16px 0 20px" }}>
             <div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
               <Search size={14} style={{ position: "absolute", left: "12px", top: "14px", color: "#8a8178" }} />
               <input
@@ -430,7 +454,14 @@ export function JournalManager() {
                 placeholder="Search essays by title or excerpt..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ paddingLeft: "34px", fontSize: "13px" }}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px 10px 34px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  background: "#faf8f5",
+                }}
               />
             </div>
 
@@ -469,9 +500,10 @@ export function JournalManager() {
                   gap: "18px",
                   padding: "18px",
                   border: "1px solid #ded9ce",
-                  borderRadius: "8px",
+                  borderRadius: "10px",
                   background: "#faf8f5",
                   alignItems: "center",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.02)",
                 }}
               >
                 {/* Number & Cover Thumbnail */}
@@ -635,7 +667,15 @@ export function JournalManager() {
       {/* ── SUB-TAB 2: HOMEPAGE SECTION SETTINGS ── */}
       {activeSubTab === "settings" && (
         <form
-          className="admin-card"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #ded9ce",
+            borderRadius: "12px",
+            padding: "28px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+            display: "grid",
+            gap: "20px",
+          }}
           onSubmit={(e) => {
             e.preventDefault();
             handleSaveSettings();
@@ -643,10 +683,10 @@ export function JournalManager() {
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: "20px", color: "#1d281f" }}>
+              <h3 style={{ margin: "0 0 4px", fontSize: "19px", color: "#1d281f", fontWeight: 600 }}>
                 Homepage Section Copy &amp; Visibility
               </h3>
-              <p className="admin-note">
+              <p style={{ margin: 0, color: "#667768", fontSize: "13px" }}>
                 Configure the headline, subtitle, and toggle whether the Journal section is shown on the homepage.
               </p>
             </div>
@@ -674,53 +714,84 @@ export function JournalManager() {
             </button>
           </div>
 
-          <div className="admin-grid" style={{ marginTop: "16px" }}>
-            <label>
-              Section Eyebrow Label
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                Section Eyebrow Label
+              </label>
               <input
                 value={settings.blogLabel}
                 onChange={(e) => setSettings({ ...settings, blogLabel: e.target.value })}
                 placeholder="FROM THE JOURNAL"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  background: "#faf8f5",
+                }}
               />
-            </label>
+            </div>
 
-            <label>
-              Section Headline Title
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                Section Headline Title
+              </label>
               <input
                 value={settings.blogTitle}
                 onChange={(e) => setSettings({ ...settings, blogTitle: e.target.value })}
                 placeholder="Thoughts for the journey within."
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  background: "#faf8f5",
+                }}
               />
-            </label>
+            </div>
           </div>
 
-          <label style={{ display: "block", marginTop: "16px" }}>
-            Section Intro Subtitle Paragraph
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+              Section Intro Subtitle Paragraph
+            </label>
             <textarea
               rows={3}
               value={settings.blogIntro}
               onChange={(e) => setSettings({ ...settings, blogIntro: e.target.value })}
               placeholder="Reflections on high-altitude medicine, elemental healing, and the transformative power of silence curated by Dr. Pratiksha Shekhawat."
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                border: "1px solid #ded9ce",
+                borderRadius: "8px",
+                fontSize: "14px",
+                background: "#faf8f5",
+                lineHeight: "1.6",
+              }}
             />
-          </label>
+          </div>
 
           {/* Live Preview Box */}
-          <div style={{ marginTop: "20px", padding: "20px", background: "#f5f2eb", border: "1px solid #ded9ce", borderRadius: "8px" }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7b3a34", display: "block", marginBottom: "6px" }}>
+          <div style={{ padding: "20px 24px", background: "#f5f2eb", border: "1px solid #ded9ce", borderRadius: "10px" }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#7b3a34", display: "block", marginBottom: "4px" }}>
               HOMEPAGE LIVE PREVIEW
             </span>
             <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#7b3a34" }}>
               {settings.blogLabel || "FROM THE JOURNAL"}
             </span>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "28px", margin: "4px 0 10px", color: "#1d281f" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "26px", margin: "4px 0 8px", color: "#1d281f" }}>
               {settings.blogTitle || "Thoughts for the journey within."}
             </h2>
-            <p style={{ margin: 0, fontSize: "14px", color: "#556658", lineHeight: "1.6", maxWidth: "600px" }}>
+            <p style={{ margin: 0, fontSize: "13.5px", color: "#556658", lineHeight: "1.6", maxWidth: "600px" }}>
               {settings.blogIntro || "Reflections on high-altitude medicine..."}
             </p>
           </div>
 
-          <div style={{ marginTop: "20px" }}>
+          <div>
             <button className="button button-dark" disabled={busy}>
               {busy ? "Saving…" : "Save Homepage Copy"}
             </button>
@@ -728,15 +799,16 @@ export function JournalManager() {
         </form>
       )}
 
-      {/* ── CREATE / EDIT ESSAY MODAL ── */}
+      {/* ── LUXURY REDESIGNED ESSAY MODAL ── */}
       {isModalOpen && editingPost && (
         <div
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
+            backgroundColor: "rgba(18, 26, 20, 0.65)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -746,157 +818,338 @@ export function JournalManager() {
           <div
             style={{
               backgroundColor: "#ffffff",
-              borderRadius: "12px",
-              width: "min(860px, 100%)",
-              maxHeight: "92vh",
+              borderRadius: "16px",
+              width: "min(880px, 100%)",
+              maxHeight: "90vh",
               overflowY: "auto",
-              padding: "32px",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.25)",
+              padding: "36px",
+              boxShadow: "0 25px 60px -10px rgba(0,0,0,0.3)",
               border: "1px solid #ded9ce",
+              display: "flex",
+              flexDirection: "column",
+              gap: "22px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid #ded9ce", paddingBottom: "16px" }}>
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #ded9ce", paddingBottom: "18px" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "22px", color: "#1d281f" }}>
+                <h3 style={{ margin: "0 0 4px", fontSize: "24px", color: "#1d281f", fontFamily: "Georgia, serif", fontWeight: 600 }}>
                   {editingPost.id?.startsWith("custom-") ? "Write New Journal Essay" : "Edit Journal Essay"}
                 </h3>
-                <span style={{ fontSize: "12px", color: "#8a8178" }}>
-                  Compose an editorial article by Dr. Pratiksha Shekhawat
+                <span style={{ fontSize: "13px", color: "#667768" }}>
+                  Compose an authentic Himalayan reflection authored by Dr. Pratiksha Shekhawat.
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#8a8178" }}
+                style={{
+                  background: "#f5f2eb",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "50%",
+                  width: "34px",
+                  height: "34px",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  color: "#1d281f",
+                }}
               >
-                <X size={22} />
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ display: "grid", gap: "16px" }}>
-              <label>
+            {/* 1. Essay Title */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
                 Essay Title (Headline) *
+              </label>
+              <input
+                type="text"
+                value={editingPost.title || ""}
+                onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
+                placeholder="e.g. The Medicine of Stillness: Returning to the Five Elements in Ladakh"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  background: "#faf8f5",
+                  fontWeight: 500,
+                  color: "#1d281f",
+                }}
+              />
+            </div>
+
+            {/* 2. URL Slug & Author Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                  URL Slug
+                </label>
                 <input
                   type="text"
-                  value={editingPost.title || ""}
-                  onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                  placeholder="e.g. The Medicine of Stillness: Returning to the Five Elements in Ladakh"
+                  value={editingPost.slug || ""}
+                  onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
+                  placeholder="leave blank to auto-generate from title"
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "1px solid #ded9ce",
+                    borderRadius: "8px",
+                    fontSize: "13.5px",
+                    background: "#faf8f5",
+                    color: "#1d281f",
+                  }}
                 />
-              </label>
-
-              <div className="admin-grid">
-                <label>
-                  URL Slug (e.g. medicine-of-stillness-ladakh)
-                  <input
-                    type="text"
-                    value={editingPost.slug || ""}
-                    onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
-                    placeholder="leave blank to auto-generate"
-                  />
-                </label>
-
-                <label>
-                  Author Attribution
-                  <input
-                    type="text"
-                    value={editingPost.authorName || "Dr. Pratiksha Shekhawat"}
-                    onChange={(e) => setEditingPost({ ...editingPost, authorName: e.target.value })}
-                  />
-                </label>
               </div>
 
-              <div className="admin-grid">
-                <label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                  Author Attribution
+                </label>
+                <input
+                  type="text"
+                  value={editingPost.authorName || "Dr. Pratiksha Shekhawat"}
+                  onChange={(e) => setEditingPost({ ...editingPost, authorName: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "1px solid #ded9ce",
+                    borderRadius: "8px",
+                    fontSize: "13.5px",
+                    background: "#faf8f5",
+                    color: "#1d281f",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 3. Category & Reading Time Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                  Category Tag
+                </label>
+                <input
+                  type="text"
+                  value={editingPost.category || "Elemental Medicine"}
+                  onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value })}
+                  placeholder="e.g. Elemental Medicine, High Altitude Nutrition"
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "1px solid #ded9ce",
+                    borderRadius: "8px",
+                    fontSize: "13.5px",
+                    background: "#faf8f5",
+                    color: "#1d281f",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                  Estimated Reading Time
+                </label>
+                <input
+                  type="text"
+                  value={editingPost.readingTime || "6 min read"}
+                  onChange={(e) => setEditingPost({ ...editingPost, readingTime: e.target.value })}
+                  placeholder="6 min read"
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "1px solid #ded9ce",
+                    borderRadius: "8px",
+                    fontSize: "13.5px",
+                    background: "#faf8f5",
+                    color: "#1d281f",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 4. Cover Image with Live Photo Preview */}
+            <div
+              style={{
+                background: "#faf8f5",
+                border: "1px solid #ded9ce",
+                borderRadius: "10px",
+                padding: "18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34", margin: 0 }}>
                   Cover Image URL
+                </label>
+                <span style={{ fontSize: "11px", color: "#667768" }}>Choose sample or enter custom URL</span>
+              </div>
+
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                {/* Live Preview Box */}
+                <div
+                  style={{
+                    width: "120px",
+                    height: "75px",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    background: "#000",
+                    flexShrink: 0,
+                    border: "1px solid #ded9ce",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={editingPost.coverImageUrl || "/hero-yoga-lamayuru.jpg"}
+                    alt="Cover preview"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
                   <input
                     type="text"
                     value={editingPost.coverImageUrl || ""}
                     onChange={(e) => setEditingPost({ ...editingPost, coverImageUrl: e.target.value })}
                     placeholder="/hero-yoga-lamayuru.jpg or https://..."
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #ded9ce",
+                      borderRadius: "8px",
+                      fontSize: "13.5px",
+                      background: "#ffffff",
+                    }}
                   />
-                </label>
 
-                <label>
-                  Reading Time
-                  <input
-                    type="text"
-                    value={editingPost.readingTime || "6 min read"}
-                    onChange={(e) => setEditingPost({ ...editingPost, readingTime: e.target.value })}
-                    placeholder="6 min read"
-                  />
-                </label>
+                  {/* Preset Pills */}
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {HIMALAYAN_IMAGE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.url}
+                        type="button"
+                        onClick={() => setEditingPost({ ...editingPost, coverImageUrl: preset.url })}
+                        style={{
+                          padding: "4px 12px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          background: editingPost.coverImageUrl === preset.url ? "#7b3a34" : "#ffffff",
+                          color: editingPost.coverImageUrl === preset.url ? "#ffffff" : "#1d281f",
+                          border: "1px solid",
+                          borderColor: editingPost.coverImageUrl === preset.url ? "#7b3a34" : "#ded9ce",
+                          borderRadius: "999px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Cover Image Quick Selectors */}
-              <div style={{ background: "#faf8f5", padding: "12px 16px", borderRadius: "6px", border: "1px solid #ded9ce" }}>
-                <span style={{ fontSize: "11px", fontWeight: 600, color: "#7b3a34", display: "block", marginBottom: "8px" }}>
-                  QUICK SELECT SAMPLE HIMALAYAN COVERS:
-                </span>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  {[
-                    { label: "Lamayuru Yoga", url: "/hero-yoga-lamayuru.jpg" },
-                    { label: "Himalayan Dawn", url: "/hero-himalayan-dawn.png" },
-                    { label: "Monastery Morning", url: "/monastery-morning.png" },
-                  ].map((preset) => (
-                    <button
-                      key={preset.url}
-                      type="button"
-                      onClick={() => setEditingPost({ ...editingPost, coverImageUrl: preset.url })}
-                      style={{
-                        padding: "4px 10px",
-                        fontSize: "11px",
-                        background: editingPost.coverImageUrl === preset.url ? "#7b3a34" : "#ffffff",
-                        color: editingPost.coverImageUrl === preset.url ? "#ffffff" : "#1d281f",
-                        border: "1px solid #ded9ce",
-                        borderRadius: "999px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
+            {/* 5. Summary Excerpt */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                Summary / Excerpt (Shown on Homepage Card &amp; Google Search Snippet) *
+              </label>
+              <textarea
+                rows={3}
+                value={editingPost.excerpt || ""}
+                onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
+                placeholder="A short, evocative summary of the essay's core insight..."
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  background: "#faf8f5",
+                  lineHeight: "1.6",
+                }}
+              />
+            </div>
+
+            {/* 6. Article Body with Formatting Snippets */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34", margin: 0 }}>
+                  Article Body (HTML / Paragraphs) *
+                </label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertSnippet("<h2>New Section Heading</h2>\n<p>Add narrative text here...</p>")}
+                    style={{ padding: "3px 8px", fontSize: "10px", fontWeight: 600, border: "1px solid #ded9ce", background: "#f5f2eb", borderRadius: "4px", cursor: "pointer" }}
+                  >
+                    + Add &lt;h2&gt;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertSnippet("<blockquote>\"Add reflective quote or Sanskrit passage here...\"</blockquote>")}
+                    style={{ padding: "3px 8px", fontSize: "10px", fontWeight: 600, border: "1px solid #ded9ce", background: "#f5f2eb", borderRadius: "4px", cursor: "pointer" }}
+                  >
+                    + Add &lt;blockquote&gt;
+                  </button>
                 </div>
               </div>
 
-              <label>
-                Summary / Excerpt (Shown on Homepage Card &amp; Google Search Snippet) *
-                <textarea
-                  rows={2}
-                  value={editingPost.excerpt || ""}
-                  onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
-                  placeholder="A short, evocative summary of the essay's core insight..."
-                />
-              </label>
-
-              <label>
-                Full Article Content (HTML / Paragraphs with &lt;p&gt;, &lt;h2&gt;, &lt;blockquote&gt;) *
-                <textarea
-                  rows={10}
-                  value={editingPost.content || ""}
-                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                  placeholder="<p class='lead-paragraph'>Write opening reflection...</p><h2>Heading</h2><p>Body text...</p>"
-                  style={{ fontFamily: "monospace", fontSize: "13px" }}
-                />
-              </label>
-
-              <label>
-                Publication Status
-                <select
-                  value={editingPost.publicationStatus || "PUBLISHED"}
-                  onChange={(e) => setEditingPost({ ...editingPost, publicationStatus: e.target.value as any })}
-                >
-                  <option value="PUBLISHED">PUBLISHED (Visible to readers)</option>
-                  <option value="DRAFT">DRAFT (Hidden from readers)</option>
-                </select>
-              </label>
+              <textarea
+                rows={9}
+                value={editingPost.content || ""}
+                onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                placeholder="<p class='lead-paragraph'>Write opening reflection...</p><h2>Heading</h2><p>Body text...</p>"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  fontFamily: "monospace",
+                  fontSize: "13px",
+                  background: "#faf8f5",
+                  lineHeight: "1.7",
+                }}
+              />
             </div>
 
-            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #ded9ce", paddingTop: "16px" }}>
+            {/* 7. Publication Status */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7b3a34" }}>
+                Publication Status
+              </label>
+              <select
+                value={editingPost.publicationStatus || "PUBLISHED"}
+                onChange={(e) => setEditingPost({ ...editingPost, publicationStatus: e.target.value as any })}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  border: "1px solid #ded9ce",
+                  borderRadius: "8px",
+                  background: "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#1d281f",
+                }}
+              >
+                <option value="PUBLISHED">PUBLISHED (Visible on website and homepage)</option>
+                <option value="DRAFT">DRAFT (Saved privately, hidden from readers)</option>
+              </select>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #ded9ce", paddingTop: "18px" }}>
               <button
                 type="button"
                 className="button button-secondary"
                 onClick={() => setIsModalOpen(false)}
                 disabled={busy}
+                style={{ padding: "10px 22px", fontSize: "12px" }}
               >
                 Cancel
               </button>
@@ -905,8 +1158,10 @@ export function JournalManager() {
                 className="button button-dark"
                 onClick={handleSaveModalPost}
                 disabled={busy}
+                style={{ padding: "10px 24px", fontSize: "12px" }}
               >
-                {busy ? "Saving…" : "Save Essay"}
+                {busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                <span>Save Essay</span>
               </button>
             </div>
           </div>
