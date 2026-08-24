@@ -1,4 +1,4 @@
-// Bhraman Retreats - Himalayan Elemental Medicine CMS Content Layer
+// Bhraman Retreats - Himalayan Elemental Medicine CMS Content Layer (v1.2.0)
 export type HomeContent = {
   heroEyebrow: string;
   heroTitle: string;
