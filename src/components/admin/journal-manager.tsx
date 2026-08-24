@@ -6,13 +6,16 @@ import {
   ArrowUpRight,
   BookOpen,
   Check,
+  Copy,
   Edit3,
   Eye,
   EyeOff,
+  FolderOpen,
   Globe,
   Image as ImageIcon,
   LayoutTemplate,
   Loader2,
+  Maximize2,
   Plus,
   Quote,
   RotateCcw,
@@ -23,6 +26,7 @@ import {
   ToggleRight,
   Trash2,
   Upload,
+  UploadCloud,
   X,
 } from "lucide-react";
 import { JournalPost, PREDEFINED_JOURNAL_POSTS } from "@/lib/journal-data";
@@ -34,14 +38,23 @@ interface JournalSettings {
   blogIntro: string;
 }
 
+interface MediaAssetItem {
+  id: string;
+  url: string;
+  title?: string;
+  altText?: string;
+  folder?: string;
+}
+
 const HIMALAYAN_IMAGE_PRESETS = [
   { label: "Lamayuru Yoga", url: "/hero-yoga-lamayuru.jpg" },
   { label: "Himalayan Dawn", url: "/hero-himalayan-dawn.png" },
   { label: "Monastery Morning", url: "/monastery-morning.png" },
+  { label: "Pangong Tso Silence", url: "/hero-yoga-lamayuru.jpg" },
 ];
 
 export function JournalManager() {
-  const [activeSubTab, setActiveSubTab] = useState<"stories" | "settings">("stories");
+  const [activeSubTab, setActiveSubTab] = useState<"stories" | "gallery" | "settings">("stories");
   const [settings, setSettings] = useState<JournalSettings>({
     showBlogSection: true,
     blogLabel: "FROM THE JOURNAL",
@@ -50,18 +63,30 @@ export function JournalManager() {
       "Reflections on high-altitude medicine, elemental healing, and the transformative power of silence curated by Dr. Pratiksha Shekhawat.",
   });
   const [posts, setPosts] = useState<JournalPost[]>([]);
+  const [galleryImages, setGalleryImages] = useState<MediaAssetItem[]>([
+    { id: "1", url: "/hero-yoga-lamayuru.jpg", title: "Lamayuru Morning Yoga Practice" },
+    { id: "2", url: "/hero-himalayan-dawn.png", title: "Himalayan Golden Dawn" },
+    { id: "3", url: "/monastery-morning.png", title: "Ancient Ladakh Monastery Meditation" },
+  ]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingInline, setUploadingInline] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   // Edit / Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<Partial<JournalPost> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const inlineFileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -82,11 +107,34 @@ export function JournalManager() {
     } finally {
       setLoading(false);
     }
+
+    // Load available media library photos
+    try {
+      const mediaRes = await fetch("/api/public/media?pageSize=50");
+      if (mediaRes.ok) {
+        const mediaJson = await mediaRes.json();
+        if (Array.isArray(mediaJson.data) && mediaJson.data.length > 0) {
+          setGalleryImages((prev) => {
+            const combined = [...mediaJson.data, ...prev];
+            const unique = Array.from(new Map(combined.map((item) => [item.url, item])).values());
+            return unique;
+          });
+        }
+      }
+    } catch {
+      // silent fallback to default gallery images
+    }
   };
 
   useEffect(() => {
     loadJournalData();
   }, []);
+
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl(null), 2500);
+  };
 
   const handleSaveSettings = async (overrideSettings?: Partial<JournalSettings>) => {
     setBusy(true);
@@ -157,7 +205,7 @@ export function JournalManager() {
     }
   };
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = (presetCover?: string) => {
     setEditingPost({
       id: `custom-${Date.now()}`,
       slug: "",
@@ -165,7 +213,7 @@ export function JournalManager() {
       excerpt: "",
       content: `<p class="lead-paragraph">In the quiet heights of Ladakh, where the air is pure and silence reigns, healing begins naturally...</p>\n\n<h2>The Healing Elements</h2>\n<p>When we align our rhythm with nature, our mind and body restore their innate balance.</p>\n\n<blockquote>"Nature holds everything we need to heal. We only have to learn how to listen again."</blockquote>`,
       authorName: "Dr. Pratiksha Shekhawat",
-      coverImageUrl: "/hero-yoga-lamayuru.jpg",
+      coverImageUrl: presetCover || "/hero-yoga-lamayuru.jpg",
       readingTime: "6 min read",
       category: "Elemental Medicine",
       publicationStatus: "PUBLISHED",
@@ -187,7 +235,8 @@ export function JournalManager() {
     });
   };
 
-  const handleFileUpload = async (file: File) => {
+  // Upload Cover Image (Hero Image for Article)
+  const handleCoverUpload = async (file: File) => {
     if (!file) return;
     setUploadingCover(true);
     try {
@@ -208,12 +257,77 @@ export function JournalManager() {
       const data = await res.json();
       if (data.url) {
         setEditingPost((prev) => (prev ? { ...prev, coverImageUrl: data.url } : prev));
-        flash("✓ Cover image uploaded and attached.");
+        setGalleryImages((prev) => [{ id: `up-${Date.now()}`, url: data.url, title: file.name }, ...prev]);
+        flash("✓ Cover image uploaded and attached successfully.");
       }
     } catch (err: any) {
       alert("Image upload failed: " + (err.message || "Please try again."));
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  // Upload In-Article Image and Auto-Insert Figure Block
+  const handleInlineImageUpload = async (file: File) => {
+    if (!file) return;
+    setUploadingInline(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slot", "journal");
+      formData.append("altText", file.name.replace(/\.[^/.]+$/, ""));
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to upload inline image");
+      }
+      const data = await res.json();
+      if (data.url) {
+        const figureSnippet = `<figure class="journal-inline-figure">\n  <img src="${data.url}" alt="${editingPost?.title || "Himalayan Journal Photography"}" />\n  <figcaption>High-altitude reflection during the Ladakh Retreat.</figcaption>\n</figure>`;
+        handleInsertSnippet(figureSnippet);
+        setGalleryImages((prev) => [{ id: `up-${Date.now()}`, url: data.url, title: file.name }, ...prev]);
+        flash("✓ Image uploaded and inserted into article body!");
+      }
+    } catch (err: any) {
+      alert("Inline image upload failed: " + (err.message || "Please try again."));
+    } finally {
+      setUploadingInline(false);
+    }
+  };
+
+  // Upload Photo directly into Journal Gallery Tab
+  const handleGalleryUpload = async (file: File) => {
+    if (!file) return;
+    setUploadingGallery(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slot", "journal");
+      formData.append("altText", file.name);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Upload failed");
+      }
+      const data = await res.json();
+      if (data.url) {
+        setGalleryImages((prev) => [{ id: `gal-${Date.now()}`, url: data.url, title: file.name }, ...prev]);
+        flash("✓ Photo uploaded to Journal Gallery.");
+      }
+    } catch (err: any) {
+      alert("Gallery upload failed: " + (err.message || "Please try again."));
+    } finally {
+      setUploadingGallery(false);
     }
   };
 
@@ -340,11 +454,11 @@ export function JournalManager() {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
             <BookOpen size={20} color="#7b3a34" />
             <h2 style={{ margin: 0, fontSize: "22px", color: "#1d281f", fontWeight: 600 }}>
-              Himalayan Journal &amp; Editorial
+              Himalayan Journal &amp; Editorial Studio
             </h2>
           </div>
           <p style={{ margin: 0, color: "#667768", fontSize: "13px" }}>
-            Manage Dr. Pratiksha Shekhawat&apos;s essays and control whether &quot;Thoughts for the journey within&quot; appears on the homepage.
+            Manage Dr. Pratiksha Shekhawat&apos;s essays, upload high-resolution photography, and control homepage visibility.
           </p>
         </div>
 
@@ -390,8 +504,8 @@ export function JournalManager() {
       {message && <p className="admin-flash">{message}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
 
-      {/* ── SUB-NAVIGATION TABS ── */}
-      <div style={{ display: "flex", gap: "10px", borderBottom: "1px solid #ded9ce", paddingBottom: "12px" }}>
+      {/* ── SUB-NAVIGATION TABS (3 Tabs) ── */}
+      <div style={{ display: "flex", gap: "10px", borderBottom: "1px solid #ded9ce", paddingBottom: "12px", flexWrap: "wrap" }}>
         <button
           type="button"
           onClick={() => setActiveSubTab("stories")}
@@ -412,6 +526,28 @@ export function JournalManager() {
         >
           <BookOpen size={14} />
           <span>Journal Stories ({posts.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("gallery")}
+          style={{
+            padding: "8px 20px",
+            border: "1px solid",
+            borderColor: activeSubTab === "gallery" ? "#7b3a34" : "#ded9ce",
+            background: activeSubTab === "gallery" ? "#7b3a34" : "#ffffff",
+            color: activeSubTab === "gallery" ? "#ffffff" : "#1d281f",
+            borderRadius: "999px",
+            fontSize: "12px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <ImageIcon size={14} />
+          <span>Photo Gallery &amp; Uploader ({galleryImages.length})</span>
         </button>
 
         <button
@@ -470,7 +606,7 @@ export function JournalManager() {
               <button
                 type="button"
                 className="button button-dark"
-                onClick={handleOpenAddModal}
+                onClick={() => handleOpenAddModal()}
                 style={{ fontSize: "12px", padding: "8px 18px" }}
               >
                 <Plus size={14} /> Write New Essay
@@ -697,7 +833,153 @@ export function JournalManager() {
         </div>
       )}
 
-      {/* ── SUB-TAB 2: HOMEPAGE SECTION SETTINGS ── */}
+      {/* ── SUB-TAB 2: PHOTO GALLERY & UPLOADER ── */}
+      {activeSubTab === "gallery" && (
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #ded9ce",
+            borderRadius: "12px",
+            padding: "28px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "19px", color: "#1d281f", fontWeight: 600 }}>
+                Himalayan Journal Photography Gallery
+              </h3>
+              <p style={{ margin: 0, color: "#667768", fontSize: "13px" }}>
+                Upload and organize editorial imagery for journal covers and in-article photo essays.
+              </p>
+            </div>
+
+            <div>
+              <input
+                type="file"
+                ref={galleryFileInputRef}
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleGalleryUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                className="button button-dark"
+                onClick={() => galleryFileInputRef.current?.click()}
+                disabled={uploadingGallery}
+                style={{ fontSize: "12px", padding: "10px 20px" }}
+              >
+                {uploadingGallery ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Uploading to Cloud…
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud size={15} /> Upload High-Res Photo
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Drag & Drop Upload Zone */}
+          <div
+            className="journal-dropzone"
+            onClick={() => galleryFileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.add("dragover");
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("dragover");
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("dragover");
+              const file = e.dataTransfer.files?.[0];
+              if (file) handleGalleryUpload(file);
+            }}
+          >
+            <UploadCloud size={32} color="#7b3a34" style={{ margin: "0 auto 8px" }} />
+            <h4 style={{ margin: "0 0 4px", fontSize: "15px", color: "#1d281f" }}>
+              Drag &amp; drop retreat photography here, or click to browse
+            </h4>
+            <span style={{ fontSize: "12px", color: "#8a8178" }}>
+              JPEG, PNG, WebP, or AVIF up to 8MB. Automatically optimized for high-DPI displays.
+            </span>
+          </div>
+
+          {/* Images Grid */}
+          <div className="journal-media-grid">
+            {galleryImages.map((asset) => (
+              <div key={asset.id || asset.url} className="journal-media-card">
+                <div className="journal-media-thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={asset.url} alt={asset.title || "Photo"} />
+                </div>
+                <div className="journal-media-meta">
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#1d281f", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {asset.title || asset.url.split("/").pop()}
+                  </span>
+
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "auto" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyUrl(asset.url)}
+                      style={{
+                        flex: 1,
+                        padding: "5px 8px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        border: "1px solid #ded9ce",
+                        borderRadius: "6px",
+                        background: copiedUrl === asset.url ? "#e8f5e9" : "#ffffff",
+                        color: copiedUrl === asset.url ? "#1b5e20" : "#2c3e30",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      {copiedUrl === asset.url ? <Check size={11} /> : <Copy size={11} />}
+                      <span>{copiedUrl === asset.url ? "Copied!" : "Copy URL"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddModal(asset.url)}
+                      title="Create a new story using this photo as the cover"
+                      style={{
+                        padding: "5px 10px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        border: "none",
+                        borderRadius: "6px",
+                        background: "#7b3a34",
+                        color: "#ffffff",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Plus size={11} /> Use Cover
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── SUB-TAB 3: HOMEPAGE SECTION SETTINGS ── */}
       {activeSubTab === "settings" && (
         <form
           style={{
@@ -927,16 +1209,21 @@ export function JournalManager() {
                 </div>
               </div>
 
-              {/* 4. Luxury Cover Studio with Direct Upload */}
+              {/* 4. Luxury Cover Studio with Direct Upload & Media Picker */}
               <div className="journal-field-group">
                 <div className="journal-field-label">
                   <span>Cover Photography Studio</span>
-                  <span className="journal-field-hint">Direct image upload or sample selection</span>
+                  <span className="journal-field-hint">Upload photo, pick preset, or select from media gallery</span>
                 </div>
 
                 <div className="journal-cover-studio">
                   {/* Visual 16:9 Canvas Preview */}
-                  <div className="journal-cover-canvas">
+                  <div
+                    className="journal-cover-canvas"
+                    onClick={() => coverFileInputRef.current?.click()}
+                    title="Click to upload new cover image"
+                    style={{ cursor: "pointer" }}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={editingPost.coverImageUrl || "/hero-yoga-lamayuru.jpg"}
@@ -945,25 +1232,47 @@ export function JournalManager() {
                         (e.currentTarget as HTMLImageElement).src = "/hero-yoga-lamayuru.jpg";
                       }}
                     />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.3)",
+                        opacity: 0,
+                        transition: "opacity 0.2s ease",
+                        display: "grid",
+                        placeItems: "center",
+                        color: "#fff",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = "1";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = "0";
+                      }}
+                    >
+                      <Upload size={16} /> Click to Replace Photo
+                    </div>
                   </div>
 
                   <div className="journal-cover-actions">
                     <div className="journal-upload-button-row">
                       <input
                         type="file"
-                        ref={fileInputRef}
+                        ref={coverFileInputRef}
                         accept="image/jpeg,image/png,image/webp,image/avif"
                         hidden
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file);
+                          if (file) handleCoverUpload(file);
                           e.target.value = "";
                         }}
                       />
                       <button
                         type="button"
                         className="journal-upload-btn"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => coverFileInputRef.current?.click()}
                         disabled={uploadingCover}
                       >
                         {uploadingCover ? (
@@ -972,14 +1281,73 @@ export function JournalManager() {
                           </>
                         ) : (
                           <>
-                            <Upload size={14} /> Upload Image from Device
+                            <Upload size={14} /> Upload Cover Photo
                           </>
                         )}
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsMediaPickerOpen(!isMediaPickerOpen)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "9px 16px",
+                          background: isMediaPickerOpen ? "#7b3a34" : "#ffffff",
+                          color: isMediaPickerOpen ? "#ffffff" : "#2c3e30",
+                          border: "1px solid",
+                          borderColor: isMediaPickerOpen ? "#7b3a34" : "#ded9ce",
+                          borderRadius: "999px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <FolderOpen size={13} />
+                        <span>{isMediaPickerOpen ? "Hide Media Library" : "Browse Media Library"}</span>
+                      </button>
                     </div>
 
+                    {/* Media Library Drawer */}
+                    {isMediaPickerOpen && (
+                      <div
+                        style={{
+                          background: "#ffffff",
+                          border: "1px solid #ded9ce",
+                          borderRadius: "10px",
+                          padding: "12px",
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
+                          gap: "8px",
+                          maxHeight: "160px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        {galleryImages.map((img) => (
+                          <div
+                            key={img.id || img.url}
+                            onClick={() => {
+                              setEditingPost({ ...editingPost, coverImageUrl: img.url });
+                              setIsMediaPickerOpen(false);
+                            }}
+                            style={{
+                              aspectRatio: "16/10",
+                              borderRadius: "6px",
+                              overflow: "hidden",
+                              border: editingPost.coverImageUrl === img.url ? "2px solid #7b3a34" : "1px solid #ded9ce",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="journal-presets-row">
-                      <span style={{ fontSize: "11px", color: "#8a8178", fontWeight: 600 }}>OR SELECT SAMPLE:</span>
+                      <span style={{ fontSize: "11px", color: "#8a8178", fontWeight: 600 }}>OR SELECT PRESET:</span>
                       {HIMALAYAN_IMAGE_PRESETS.map((preset) => (
                         <button
                           key={preset.url}
@@ -1019,17 +1387,46 @@ export function JournalManager() {
                 />
               </div>
 
-              {/* 6. Article Body with Formatting Toolbar */}
+              {/* 6. Article Body with Formatting Toolbar & Inline Image Uploader */}
               <div className="journal-field-group">
                 <div className="journal-field-label">
                   <span>Full Article Body (HTML / Formatted Content) *</span>
-                  <span className="journal-field-hint">Supports rich editorial typography</span>
+                  <span className="journal-field-hint">Supports rich editorial typography &amp; embedded images</span>
                 </div>
 
                 <div className="journal-editor-toolbar">
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#7b3a34", marginRight: "4px" }}>
-                    QUICK FORMAT:
-                  </span>
+                  {/* Inline Image Uploader Button */}
+                  <input
+                    type="file"
+                    ref={inlineFileInputRef}
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    hidden
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleInlineImageUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="journal-toolbar-btn"
+                    onClick={() => inlineFileInputRef.current?.click()}
+                    disabled={uploadingInline}
+                    style={{
+                      background: "#7b3a34",
+                      color: "#ffffff",
+                      borderColor: "#7b3a34",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {uploadingInline ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                    <span>{uploadingInline ? "Uploading..." : "+ Upload & Insert Image"}</span>
+                  </button>
+
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#7b3a34", margin: "0 4px" }}>|</span>
+
                   <button
                     type="button"
                     className="journal-toolbar-btn"
@@ -1104,7 +1501,7 @@ export function JournalManager() {
                   type="button"
                   className="journal-btn-save"
                   onClick={handleSaveModalPost}
-                  disabled={busy || uploadingCover}
+                  disabled={busy || uploadingCover || uploadingInline}
                 >
                   {busy ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   <span>Save &amp; Update Essay</span>
