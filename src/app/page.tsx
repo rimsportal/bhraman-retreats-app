@@ -1,4 +1,5 @@
-import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { ArrowUpRight, CalendarDays, MapPin, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { BrandLogo } from "@/components/brand-logo";
 import { CinematicHero } from "@/components/cinematic-hero";
@@ -38,7 +39,7 @@ export default async function Home() {
   const host = incomingHeaders.get("x-forwarded-host") ?? incomingHeaders.get("host") ?? "localhost:3000";
   const protocol = incomingHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const data = await getHomepageData(`${protocol}://${host}`);
-  const { content, retreat, upcomingRetreats, completedRetreats, founder, elements, testimonials, blog, quotes, media, mediaSlots, unavailable } = data;
+  const { content, retreat, upcomingRetreats, completedRetreats, founder, elements, testimonials, blog, blogs, quotes, media, mediaSlots, unavailable } = data;
 
   // The soonest upcoming retreat is featured large above; show up to two more as cards.
   const moreRetreats = upcomingRetreats.filter((item) => item.slug !== retreat?.slug).slice(0, 2);
@@ -265,16 +266,96 @@ export default async function Home() {
       </section>
 
       <section className="blog-section section" id="journal">
-        <SectionContainer className="section-heading compact">
-          <div><SectionLabel>{content.blogLabel}</SectionLabel><EditorialHeading>{content.blogTitle}</EditorialHeading></div>
+        <SectionContainer className="section-heading compact journal-header-wrap">
+          <div>
+            <SectionLabel>{content.blogLabel || "FROM THE JOURNAL"}</SectionLabel>
+            <EditorialHeading>{content.blogTitle || "Thoughts for the journey within."}</EditorialHeading>
+          </div>
+          <p className="journal-section-intro">
+            Reflections on high-altitude medicine, elemental healing, and the transformative power of silence curated by Dr. Pratiksha Shekhawat.
+          </p>
         </SectionContainer>
-        {blog ? (
+
+        {blogs && blogs.length > 0 ? (
+          <SectionContainer className="journal-magazine-grid">
+            {/* Featured Lead Story */}
+            <div className="journal-lead-card">
+              <Link href={`/blog/${blogs[0].slug}`} className="journal-lead-media-wrap">
+                <ResponsiveMedia
+                  src={blogs[0].coverImageUrl ?? "/hero-yoga-lamayuru.jpg"}
+                  alt={blogs[0].title}
+                  fallbackTitle={blogs[0].title}
+                  fallbackHint="Journal cover is being prepared"
+                />
+                <span className="journal-pill-badge">Featured Essay</span>
+              </Link>
+
+              <div className="journal-lead-body">
+                <div className="journal-meta-row">
+                  <span className="journal-author-tag">{blogs[0].authorName ?? "Dr. Pratiksha Shekhawat"}</span>
+                  <span className="journal-dot">·</span>
+                  <span className="journal-read-time">6 min read</span>
+                </div>
+                <h3 className="journal-lead-title">
+                  <Link href={`/blog/${blogs[0].slug}`}>{blogs[0].title}</Link>
+                </h3>
+                <p className="journal-lead-excerpt">{blogs[0].excerpt}</p>
+                <div className="journal-card-footer">
+                  <SecondaryButton href={`/blog/${blogs[0].slug}`} showArrow>
+                    Read Journal Essay
+                  </SecondaryButton>
+                </div>
+              </div>
+            </div>
+
+            {/* Companion Stories Grid */}
+            {blogs.length > 1 && (
+              <div className="journal-companion-list">
+                {blogs.slice(1, 3).map((item, index) => (
+                  <article key={item.id || item.slug || index} className="journal-companion-card">
+                    <Link href={`/blog/${item.slug}`} className="journal-companion-thumb">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.coverImageUrl || "/hero-himalayan-dawn.png"}
+                        alt={item.title}
+                        className="companion-img"
+                      />
+                    </Link>
+                    <div className="journal-companion-body">
+                      <div className="journal-meta-row">
+                        <span className="journal-author-tag">{item.authorName ?? "Dr. Pratiksha Shekhawat"}</span>
+                        <span className="journal-dot">·</span>
+                        <span className="journal-read-time">{index === 0 ? "4 min read" : "5 min read"}</span>
+                      </div>
+                      <h4 className="journal-companion-title">
+                        <Link href={`/blog/${item.slug}`}>{item.title}</Link>
+                      </h4>
+                      <p className="journal-companion-excerpt">{item.excerpt}</p>
+                      <Link href={`/blog/${item.slug}`} className="journal-read-link">
+                        Read Story <ArrowUpRight size={13} />
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </SectionContainer>
+        ) : blog ? (
           <SectionContainer className="featured-blog">
             <ResponsiveMedia src={blog.coverImageUrl ?? blogMedia?.url} alt={blogMedia?.altText ?? blog.title} fallbackTitle={blog.title} fallbackHint="Journal cover is being prepared" />
-            <div><p className="eyebrow">{blog.authorName ?? "Bhraman Retreats"}</p><h3>{blog.title}</h3><p>{blog.excerpt}</p><SecondaryButton href={`/blog/${blog.slug}`} showArrow>Read the journal</SecondaryButton></div>
+            <div>
+              <p className="eyebrow">{blog.authorName ?? "Bhraman Retreats"}</p>
+              <h3>{blog.title}</h3>
+              <p>{blog.excerpt}</p>
+              <SecondaryButton href={`/blog/${blog.slug}`} showArrow>
+                Read the journal
+              </SecondaryButton>
+            </div>
           </SectionContainer>
         ) : (
-          <SectionContainer className="empty-content"><p>The next journal story is being prepared.</p></SectionContainer>
+          <SectionContainer className="empty-content">
+            <p>The next journal story is being prepared.</p>
+          </SectionContainer>
         )}
       </section>
 

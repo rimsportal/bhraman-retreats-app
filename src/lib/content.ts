@@ -213,6 +213,7 @@ export type HomepageData = {
   founder: FounderContent | null;
   testimonials: TestimonialContent[];
   blog: BlogContent | null;
+  blogs: BlogContent[];
   quotes: QuoteContent[];
   media: MediaContent[];
   mediaSlots: Record<string, string>;
@@ -343,6 +344,7 @@ export function mapHomepageResponses(results: {
     founder: envelopeData(results.founder),
     testimonials: (envelopeData(results.testimonials) ?? []).slice(0, 3),
     blog: (envelopeData(results.blogs) ?? [])[0] ?? null,
+    blogs: envelopeData(results.blogs) ?? [],
     quotes: (envelopeData(results.quotes) ?? []).slice(0, 6),
     media: (envelopeData(results.media) ?? [])
       .filter(
@@ -373,7 +375,7 @@ export async function getHomepageData(origin: string): Promise<HomepageData> {
     fetchApi<SettingsPayload>(origin, "/api/public/site-settings"),
     fetchApi<FounderContent>(origin, "/api/public/founder"),
     fetchApi<TestimonialContent[]>(origin, "/api/public/testimonials?page=1&pageSize=3&sort=sortOrder&order=asc"),
-    fetchApi<BlogContent[]>(origin, "/api/public/blogs?page=1&pageSize=1&sort=publishedAt&order=desc"),
+    fetchApi<BlogContent[]>(origin, "/api/public/blogs?page=1&pageSize=3&sort=publishedAt&order=desc"),
     fetchApi<QuoteContent[]>(origin, "/api/public/quotes?page=1&pageSize=6&sort=sortOrder&order=asc"),
     fetchApi<MediaContent[]>(origin, "/api/public/media?page=1&pageSize=100"),
   ]);
