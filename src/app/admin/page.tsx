@@ -700,7 +700,7 @@ export default function AdminPage() {
 
           <input
             type="text"
-            placeholder="Username (e.g. bhraman-sharad-admin)"
+            placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoFocus
