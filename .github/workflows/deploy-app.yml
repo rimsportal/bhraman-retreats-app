@@ -111,20 +111,31 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
-          RG="rg-bhr-ret-${ENVIRONMENT}-cin"
-          SERVER="psql-bhr-ret-${ENVIRONMENT}-cin"
-          RULE="gh-deploy-temp"
-          IP="$(curl -s https://api.ipify.org)"
-          fw() {
-            local action="$1"; shift
-            az postgres flexible-server firewall-rule "$action" \
-              --resource-group "$RG" --server-name "$SERVER" --name "$RULE" "$@" 2>/dev/null \
-            || az postgres flexible-server firewall-rule "$action" \
-              --resource-group "$RG" --name "$SERVER" --rule-name "$RULE" "$@"
-          }
-          fw create --start-ip-address "$IP" --end-ip-address "$IP" >/dev/null
-          trap 'fw delete --yes >/dev/null 2>&1 || true' EXIT
-          pnpm prisma migrate deploy
+
+          # Extract database host and server name from DATABASE_URL
+          HOST=$(echo "$DATABASE_URL" | sed -E 's/.*@([^:/]+).*/\1/')
+          SERVER=$(echo "$HOST" | cut -d'.' -f1)
+
+          echo "Target DB Server: $SERVER ($HOST)"
+
+          # Dynamically locate the Resource Group for the server
+          RG=$(az postgres flexible-server list --query "[?name=='$SERVER'].resourceGroup | [0]" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$RG" ] && [ "$RG" != "None" ]; then
+            IP="$(curl -s https://api.ipify.org)"
+            RULE="gh-deploy-${GITHUB_RUN_ID}"
+            echo "Attempting temporary firewall rule for runner IP ($IP) on $SERVER in $RG..."
+            az postgres flexible-server firewall-rule create \
+              --resource-group "$RG" \
+              --server-name "$SERVER" \
+              --name "$RULE" \
+              --start-ip-address "$IP" \
+              --end-ip-address "$IP" 2>/dev/null || true
+
+            trap 'az postgres flexible-server firewall-rule delete --resource-group "$RG" --server-name "$SERVER" --name "$RULE" --yes 2>/dev/null || true' EXIT
+          fi
+
+          pnpm prisma db push --skip-generate || pnpm prisma migrate deploy
 
   # ── STAGE 3: RESTART APP SERVICE ──
   deploy-app:
