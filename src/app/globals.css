@@ -1817,12 +1817,27 @@ footer.site-footer > small {
 .admin-retreat-title strong { font: 600 17px var(--font-display); color: var(--ink); }
 .admin-retreat-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .admin-retreat-actions button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: transparent; color: var(--earth); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
-.admin-retreat-actions button.danger { border-color: rgba(127, 47, 39, 0.3); }
-@media (max-width: 720px) { .admin-retreat-row { align-items: flex-start; flex-direction: column; } }
-.admin-retreat-cover { display: grid; gap: 12px; }
-.admin-cover-label { color: var(--mud); font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
-.admin-retreat-cover img { width: 100%; max-width: 420px; aspect-ratio: 3 / 2; border: 1px solid var(--line); border-radius: var(--radius-sm); object-fit: cover; }
 .admin-retreat-cover .admin-image-empty { max-width: 420px; aspect-ratio: 3 / 2; }
+
+/* Multi-Factor Authentication & Admin UI */
+.admin-login.admin-login-wide { max-width: 460px; padding: 42px 36px; }
+.mfa-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(70, 107, 131, 0.12); color: #2d4554; border-radius: var(--radius-pill); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.mfa-qr-container { display: grid; justify-items: center; gap: 10px; padding: 16px; background: #faf8f5; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.mfa-qr-container img { width: 190px; height: 190px; border-radius: 4px; background: white; padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.mfa-secret-label { font-size: 11px; color: var(--text-muted); }
+.mfa-secret-code { font-family: monospace; font-size: 12px; font-weight: 700; color: var(--earth); background: rgba(127, 47, 39, 0.08); padding: 4px 8px; border-radius: 4px; letter-spacing: .12em; user-select: all; }
+.otp-input { text-align: center; font-family: monospace; font-size: 22px !important; letter-spacing: .35em !important; font-weight: 700 !important; color: var(--ink) !important; }
+.admin-user-pill { display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 6px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-pill); font-size: 11px; color: var(--ink); }
+.admin-user-pill strong { color: var(--earth); font-weight: 600; }
+.admin-user-btn { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 0; padding: 0; color: var(--text-muted); font-size: 11px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.admin-user-btn:hover { color: var(--earth); }
+
+/* Change password modal */
+.admin-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 1000; padding: 20px; }
+.admin-modal-box { width: 100%; max-width: 420px; background: var(--white); border: 1px solid var(--line); box-shadow: var(--shadow-deep); padding: 32px; display: grid; gap: 18px; }
+.admin-modal-box h3 { margin: 0; font-size: 24px; color: var(--ink); }
+.admin-modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+
 
 /* Ambient natural motion */
 .will-reveal { opacity: 0; transform: translateY(38px); transition: opacity 1s var(--ease), transform 1s var(--ease); }

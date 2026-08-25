@@ -2,7 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2, LogOut, Plus, Trash2, Upload, Youtube } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  KeyRound,
+  Loader2,
+  LogOut,
+  Plus,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
+  Upload,
+  User,
+  Youtube,
+} from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import dynamic from "next/dynamic";
 import { publishMediaAsset, uploadMediaForReview } from "@/lib/media-upload-client";
@@ -227,7 +241,26 @@ function CropModal({ imageUrl, onCancel, onApply }: CropModalProps) {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [adminUser, setAdminUser] = useState<{ username: string; role: string } | null>(null);
+  
+  // Auth Form State
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginStep, setLoginStep] = useState<"LOGIN" | "SETUP_MFA" | "VERIFY_MFA">("LOGIN");
+  const [pendingToken, setPendingToken] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // Change Password Modal State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currPass, setCurrPass] = useState("");
+  const [nextPass, setNextPass] = useState("");
+  const [confirmNextPass, setConfirmNextPass] = useState("");
+
   const [tab, setTab] = useState<(typeof TABS)[number]>("Content");
   const [retreat, setRetreat] = useState<RetreatContent | null>(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -243,6 +276,18 @@ export default function AdminPage() {
 
   const flash = (msg: string) => { setMessage(msg); setError(null); setTimeout(() => setMessage(null), 3000); };
   const fail = (msg: string) => { setError(msg); setMessage(null); };
+
+  const loadAdminUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/auth/session");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authed) setAdminUser(data.user);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const loadContent = useCallback(async () => {
     const res = await fetch("/api/admin/content");
@@ -260,7 +305,8 @@ export default function AdminPage() {
       setPhilosophyParagraphs([data.philosophyParagraphs[0] ?? "", data.philosophyParagraphs[1] ?? ""]);
     }
     setAuthed(true);
-  }, []);
+    loadAdminUser();
+  }, [loadAdminUser]);
 
   const loadBookings = useCallback(async () => {
     const res = await fetch("/api/admin/bookings");
@@ -270,22 +316,140 @@ export default function AdminPage() {
   useEffect(() => { loadContent(); }, [loadContent]);
   useEffect(() => { if (authed && tab === "Bookings") loadBookings(); }, [authed, tab, loadBookings]);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleInitialLogin(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null);
-    const res = await fetch("/api/admin/login", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    setBusy(false);
-    if (!res.ok) { fail((await res.json()).error ?? "Login failed"); return; }
-    setPassword("");
-    loadContent();
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      setBusy(false);
+
+      if (!res.ok) {
+        fail(data.error ?? "Login failed");
+        return;
+      }
+
+      if (data.status === "SETUP_REQUIRED") {
+        setPendingToken(data.pendingToken);
+        setQrCode(data.qrCode);
+        setSecretKey(data.secret);
+        setLoginStep("SETUP_MFA");
+        flash("Please scan the QR code in Microsoft Authenticator and set your permanent password.");
+      } else if (data.status === "MFA_REQUIRED") {
+        setPendingToken(data.pendingToken);
+        setLoginStep("VERIFY_MFA");
+      } else if (data.ok) {
+        // Legacy single password fallback
+        setPassword("");
+        loadContent();
+      }
+    } catch {
+      setBusy(false);
+      fail("Failed to connect to authentication service.");
+    }
+  }
+
+  async function handleVerifyMfa(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (loginStep === "SETUP_MFA") {
+      if (!newPassword || newPassword.length < 8) {
+        fail("Please create a new password with at least 8 characters.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        fail("New password and confirm password do not match.");
+        return;
+      }
+    }
+
+    if (!otp || otp.trim().length !== 6) {
+      fail("Please enter the 6-digit code from Microsoft Authenticator.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/auth/verify-mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pendingToken,
+          otp: otp.trim(),
+          newPassword: loginStep === "SETUP_MFA" ? newPassword.trim() : undefined,
+        }),
+      });
+      const data = await res.json();
+      setBusy(false);
+
+      if (!res.ok) {
+        fail(data.error ?? "Verification failed.");
+        return;
+      }
+
+      setPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setOtp("");
+      setLoginStep("LOGIN");
+      setAdminUser(data.user);
+      loadContent();
+    } catch {
+      setBusy(false);
+      fail("Verification request failed.");
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nextPass || nextPass.length < 8) {
+      fail("New password must be at least 8 characters long.");
+      return;
+    }
+    if (nextPass !== confirmNextPass) {
+      fail("New password and confirmation do not match.");
+      return;
+    }
+
+    setBusy(true); setError(null);
+    try {
+      const res = await fetch("/api/admin/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currPass, newPassword: nextPass }),
+      });
+      const data = await res.json();
+      setBusy(false);
+      if (!res.ok) {
+        fail(data.error ?? "Failed to change password.");
+        return;
+      }
+      setShowPasswordModal(false);
+      setCurrPass("");
+      setNextPass("");
+      setConfirmNextPass("");
+      flash("Password updated successfully.");
+    } catch {
+      setBusy(false);
+      fail("Failed to change password.");
+    }
   }
 
   async function handleLogout() {
     await fetch("/api/admin/login", { method: "DELETE" });
     setAuthed(false);
+    setAdminUser(null);
+    setLoginStep("LOGIN");
+    setUsername("");
+    setPassword("");
+    setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
   }
 
   async function save(payload: object, okMsg: string) {
@@ -326,12 +490,12 @@ export default function AdminPage() {
             : slot === "bg.testimonials"
               ? "Guest voices background"
               : slot === "bg.philosophy"
-              ? "Philosophy section image"
-              : slot === "bg.itinerary"
-              ? "Itinerary page background"
-              : slot === "bg.moments"
-              ? "Moments page background"
-              : `${retreat?.title ?? "Bhraman retreat"} cover`;
+                ? "Philosophy section image"
+                : slot === "bg.itinerary"
+                  ? "Itinerary page background"
+                  : slot === "bg.moments"
+                    ? "Moments page background"
+                    : `${retreat?.title ?? "Bhraman retreat"} cover`;
       const asset = await uploadMediaForReview(file, {
         folder: mediaFolderFor(slot),
         altText: label,
@@ -394,15 +558,167 @@ export default function AdminPage() {
   if (authed === null) return <main className="admin-shell"><p className="admin-loading"><Loader2 className="spin" size={18} /> Loading…</p></main>;
 
   if (!authed) {
+    if (loginStep === "SETUP_MFA") {
+      return (
+        <main className="admin-shell">
+          <form className="admin-login admin-login-wide" onSubmit={handleVerifyMfa}>
+            <BrandLogo />
+            <span className="mfa-badge"><ShieldCheck size={13} /> Microsoft Authenticator Setup</span>
+            <h1>First-Time MFA Setup</h1>
+            <p>Scan this QR code in <strong>Microsoft Authenticator</strong> on your phone, enter the 6-digit code, and create your new password.</p>
+
+            {qrCode && (
+              <div className="mfa-qr-container">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrCode} alt="Scan in Microsoft Authenticator" />
+                <span className="mfa-secret-label">Can't scan? Use manual setup key:</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="mfa-secret-code">{secretKey}</span>
+                  <button
+                    type="button"
+                    style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--earth)" }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(secretKey);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    title="Copy Secret"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ width: "100%", display: "grid", gap: 12, textAlign: "left" }}>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--mud)", fontWeight: 600 }}>
+                6-Digit Authenticator Code
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  className="otp-input"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  autoFocus
+                  required
+                />
+              </label>
+
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--mud)", fontWeight: 600 }}>
+                Create New Permanent Password (min 8 chars)
+                <input
+                  type="password"
+                  placeholder="Enter new strong password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--mud)", fontWeight: 600 }}>
+                Confirm New Password
+                <input
+                  type="password"
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+
+            <button className="button button-dark" style={{ width: "100%" }} disabled={busy || otp.length !== 6 || !newPassword}>
+              {busy ? "Activating MFA…" : "Activate MFA & Sign In"}
+            </button>
+
+            <button
+              type="button"
+              className="admin-cancel"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              onClick={() => { setLoginStep("LOGIN"); setError(null); }}
+            >
+              <ArrowLeft size={13} /> Back to login
+            </button>
+          </form>
+        </main>
+      );
+    }
+
+    if (loginStep === "VERIFY_MFA") {
+      return (
+        <main className="admin-shell">
+          <form className="admin-login" onSubmit={handleVerifyMfa}>
+            <BrandLogo />
+            <span className="mfa-badge"><Smartphone size={13} /> Two-Factor Verification</span>
+            <h1>Security Code</h1>
+            <p>Enter the 6-digit verification code from <strong>Microsoft Authenticator</strong> for <strong>{username}</strong>.</p>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              className="otp-input"
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              autoFocus
+              required
+            />
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+
+            <button className="button button-dark" style={{ width: "100%" }} disabled={busy || otp.length !== 6}>
+              {busy ? "Verifying…" : "Verify & Sign in"}
+            </button>
+
+            <button
+              type="button"
+              className="admin-cancel"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              onClick={() => { setLoginStep("LOGIN"); setError(null); }}
+            >
+              <ArrowLeft size={13} /> Back to login
+            </button>
+          </form>
+        </main>
+      );
+    }
+
+    // Step 1: Initial Username & Password Form
     return (
       <main className="admin-shell">
-        <form className="admin-login" onSubmit={handleLogin}>
+        <form className="admin-login" onSubmit={handleInitialLogin}>
           <BrandLogo />
           <h1>Admin</h1>
-          <p>Bhraman Retreats content manager</p>
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
+          <p>Bhraman Retreats portal · Secure authentication</p>
+
+          <input
+            type="text"
+            placeholder="Username (e.g. bhraman-sharad-admin)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoFocus
+            required
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="button button-dark" disabled={busy || !password}>{busy ? "Checking…" : "Sign in"}</button>
+          <button className="button button-dark" style={{ width: "100%" }} disabled={busy || !username || !password}>
+            {busy ? "Authenticating…" : "Continue with MFA"}
+          </button>
         </form>
       </main>
     );
@@ -413,8 +729,84 @@ export default function AdminPage() {
       <header className="admin-header">
         <Link className="brand" href="/"><BrandLogo context="admin" /></Link>
         <nav>{TABS.map((t) => <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
+        
+        {adminUser && (
+          <div className="admin-user-pill">
+            <User size={13} />
+            <span><strong>{adminUser.username}</strong> ({adminUser.role.replace("_", " ")})</span>
+            <button
+              type="button"
+              className="admin-user-btn"
+              onClick={() => setShowPasswordModal(true)}
+              title="Change Password"
+            >
+              <KeyRound size={12} /> Change Password
+            </button>
+          </div>
+        )}
+
         <button className="admin-logout" onClick={handleLogout}><LogOut size={15} /> Sign out</button>
       </header>
+
+      {showPasswordModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Change Password</h3>
+            <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)" }}>Update your account password for <strong>{adminUser?.username}</strong>.</p>
+            <form onSubmit={handleChangePassword} style={{ display: "grid", gap: 14 }}>
+              <label>
+                Current Password
+                <input
+                  type="password"
+                  placeholder="Enter current password"
+                  value={currPass}
+                  onChange={(e) => setCurrPass(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                New Password (min 8 characters)
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  value={nextPass}
+                  onChange={(e) => setNextPass(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Confirm New Password
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmNextPass}
+                  onChange={(e) => setConfirmNextPass(e.target.value)}
+                  required
+                />
+              </label>
+
+              {error && <p className="form-error" role="alert">{error}</p>}
+
+              <div className="admin-modal-actions">
+                <button
+                  type="button"
+                  className="admin-cancel"
+                  onClick={() => { setShowPasswordModal(false); setError(null); }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button button-dark"
+                  disabled={busy || !currPass || !nextPass}
+                >
+                  {busy ? "Updating…" : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {message && <p className="admin-flash">{message}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}

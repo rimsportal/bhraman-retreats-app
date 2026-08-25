@@ -20,6 +20,22 @@ model User {
   bookings   Booking[]
 }
 
+model AdminUser {
+  id                 String    @id @default(cuid())
+  username           String    @unique
+  passwordHash       String
+  salt               String
+  role               String    @default("SUPER_ADMIN")
+  mustChangePassword Boolean   @default(true)
+  mfaSecret          String?
+  mfaEnabled         Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([username])
+}
+
 model Retreat {
   id                String       @id @default(cuid())
   slug              String       @unique
