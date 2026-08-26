@@ -136,6 +136,7 @@ export function SiteFooter() {
             <Link href="/testimonials">Guest Voices &amp; Films</Link>
             <Link href="/#enquiry">Request a Himalayan Place</Link>
             <Link href="/privacy-policy">Privacy Policy</Link>
+            <Link href="/terms-and-conditions">Terms &amp; Conditions</Link>
           </nav>
         </div>
       </div>
@@ -145,6 +146,8 @@ export function SiteFooter() {
         <small>© 2026 Bhraman Retreats. All rights reserved.</small>
         <div className="footer-legal-links">
           <Link href="/privacy-policy" className="footer-legal-link">Privacy Policy</Link>
+          <span className="legal-dot">·</span>
+          <Link href="/terms-and-conditions" className="footer-legal-link">Terms &amp; Conditions</Link>
         </div>
         <small className="footer-motto">Curated with stillness &amp; presence in the Himalayas.</small>
       </div>

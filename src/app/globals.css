@@ -5396,6 +5396,10 @@ footer.site-footer > small {
   color: var(--earth, #7b3a34);
 }
 
+.footer-legal-links .legal-dot {
+  color: var(--line, #ded9ce);
+}
+
 .privacy-page {
   min-height: 100vh;
   background: var(--paper, #f7f4ee);
