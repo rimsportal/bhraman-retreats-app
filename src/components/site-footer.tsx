@@ -135,6 +135,7 @@ export function SiteFooter() {
             <Link href="/upcoming-retreats">Upcoming Retreat Editions</Link>
             <Link href="/testimonials">Guest Voices &amp; Films</Link>
             <Link href="/#enquiry">Request a Himalayan Place</Link>
+            <Link href="/privacy-policy">Privacy Policy</Link>
           </nav>
         </div>
       </div>
@@ -142,6 +143,9 @@ export function SiteFooter() {
       {/* Bottom Bar */}
       <div className="footer-bottom-bar">
         <small>© 2026 Bhraman Retreats. All rights reserved.</small>
+        <div className="footer-legal-links">
+          <Link href="/privacy-policy" className="footer-legal-link">Privacy Policy</Link>
+        </div>
         <small className="footer-motto">Curated with stillness &amp; presence in the Himalayas.</small>
       </div>
     </footer>
